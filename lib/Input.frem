@@ -1,0 +1,46 @@
+# Gets input is in list of good inputs
+# Input:
+#		GetInput_GoodKeys - List of good inputs 
+# Output:
+#		The key pressed if in GetInput_GoodKeys else ""
+FUNCTION GetInput( list GetInput_GoodKeys)
+	SET string GetInput_KeyDown = KeyDown()
+	IF IsGoodKey( GetInput_KeyDown, GetInput_GoodKeys ) THEN
+		OUTPUT GetInput_KeyDown
+	ELSE
+		OUTPUT ""
+	OK
+RESULT string
+
+# Checks if input is in list of good inputs
+# Input:
+#		IsGoodKey_KeyDown - String of Key pressed
+#		IsGoodKey_GoodKeys - List of good inputs 
+# Output:
+#		true if IsGoodKey_KeyDown is in IsGoodKey_GoodKeys else false
+FUNCTION IsGoodKey(string IsGoodKey_KeyDown, list IsGoodKey_GoodKeys)
+	EACH IsGoodKey_GoodKey IN IsGoodKey_GoodKeys REPEAT
+		IF IsGoodKey_KeyDown EQ IsGoodKey_GoodKey THEN
+			OUTPUT true
+		OK
+	DONE
+	OUTPUT false
+RESULT boolean
+
+# Locks Keyboard for input
+# Input:
+#		Nothing. 
+# Output:
+#		Nothing. 
+FUNCTION LockKB()
+	SysPut("B", 5, true)
+RESULT nothing
+
+# Unlocks Keyboard from input
+# Input:
+#		Nothing. 
+# Output:
+#		Nothing. 
+FUNCTION UnlockKB()
+	SysPut("B", 5, false)
+RESULT nothing 

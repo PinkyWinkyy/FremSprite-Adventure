@@ -1,0 +1,210 @@
+# Reads the RoomData from file
+# Input:
+#		GetRoomData_Room - String of the room name. Needs address from Adveture Folder
+#		RoomName - String of the room name. Exactly the folder name
+# Output:
+#		GetRoomData_Output - Map of all data in "<RoomDataType>.data" 
+FUNCTION GetRoomData(string GetRoomData_Room)
+	READY map GetRoomData_Output
+	SET list GetRoomData_Types = DataRead( GetRoomData_Room + "/data" )
+	EACH GetRoomData_Type IN GetRoomData_Types REPEAT
+		SET list GetRoomData_tmp_List = DataRead( GetRoomData_Room + "/" + GetRoomData_Type)# ReadRoomData( GetRoomData_Type, GetRoomData_Room )
+		SET map GetRoomData_tmp_Map = FormatRoomData( GetRoomData_tmp_List )
+		index( GetRoomData_Output, GetRoomData_Type, GetRoomData_tmp_Map[GetRoomData_Type] )
+	DONE
+	OUTPUT GetRoomData_Output
+RESULT map
+
+# Reads the RoomData in as a List
+# Input:
+#		RoomDataType - String of the kind of data store listed in data.dat "<RoomDataType>.data" 
+#		RoomName - String of the room name. Exactly the folder name
+# Output:
+#		RoomData_Output - List of all data in "<RoomDataType>.data" 
+FUNCTION ReadRoomData( string RoomDataType, string RoomName )
+	SET string DataFileLocation = RoomName + "/" + RoomDataType # Location of RoomData of "RoomDataType"
+	SET list RoomDataRead_List = DataRead( DataFileLocation ) # Room Data of "RoomDataType" store as a list of strings
+	READY list RoomData_Output # Ready Output
+	# Loops over Room Data Of "RoomDataType"
+	EACH RoomDataRead_SingleLine_String IN RoomDataRead_List REPEAT
+		READY string RoomData_Output_tmp_String # Tmp store for room data on each line function
+		READY list RoomData_Output_tmp_List
+		SET list RoomDataRead_SingleLine_List = tolist( RoomDataRead_SingleLine_String )
+		EACH RoomDataRead_SingleLine_SingleChar IN RoomDataRead_SingleLine_List REPEAT
+			IF RoomDataRead_SingleLine_SingleChar NEQ " " THEN
+				RoomData_Output_tmp_String = RoomData_Output_tmp_String + RoomDataRead_SingleLine_SingleChar
+			ELSE
+				append( RoomData_Output_tmp_List, RoomData_Output_tmp_String )
+				READY string RoomData_Output_tmp_String
+			OK
+		DONE
+		append( RoomData_Output_tmp_List, RoomData_Output_tmp_String )
+		append( RoomData_Output, RoomData_Output_tmp_List ) 
+	DONE
+	OUTPUT RoomData_Output
+RESULT list
+
+#Formats RoomData into a Map
+# Input:
+#		RoomData_tmp - List of data from ReadRoomData
+# Output:
+#		RoomData_Out - RoomData_tmp formatted to a map
+FUNCTION FormatRoomData( list RoomData_tmp )
+	READY map RoomData_Out
+	SET string mapname = shift(RoomData_tmp)
+	WHILE size(RoomData_tmp) gt 0 REPEAT
+		SET string RoomType = shift(RoomData_tmp)
+		IF RoomType EQ "{" THEN
+			envput( "RoomData_tmp", RoomData_tmp )
+			index( RoomData_Out, mapname, RoomData_GetMap() ) # Grabs map subset
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomType EQ "[" THEN
+			envput( "RoomData_tmp", RoomData_tmp )		
+			index( RoomData_Out, mapname, RoomData_GetList()) # Grabs list subset
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomType EQ "'" THEN
+			index( RoomData_Out, mapname, shift(RoomData_tmp) ) # Stores String
+		OK OK OK
+	DONE
+	OUTPUT RoomData_Out
+RESULT map
+
+# Grabs map data from RoomData. Recursive
+# Input:
+#		Nothing. Works on RoomData_tmp in memory
+# Output:
+#		RoomData_GetMap_Output - A map of the current section
+FUNCTION RoomData_GetMap()
+	SET list RoomData_tmp = envget("RoomData_tmp")
+	READY map RoomData_GetMap_Output
+	WHILE RoomData_tmp[0] NEQ "}" REPEAT
+		SET string RoomData_Name = shift(RoomData_tmp)
+		IF RoomData_tmp[0] EQ "{" THEN
+			remove( RoomData_tmp, 0 )
+			envput( "RoomData_tmp", RoomData_tmp )			
+			index( RoomData_GetMap_Output, RoomData_Name, RoomData_GetMap() )
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomData_tmp[0] EQ "[" THEN
+			remove( RoomData_tmp, 0 )
+			envput( "RoomData_tmp", RoomData_tmp )			
+			index( RoomData_GetMap_Output, RoomData_Name, RoomData_GetList() )
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomData_tmp[0] EQ "'" THEN
+			remove( RoomData_tmp, 0 )
+			index( RoomData_GetMap_Output, RoomData_Name, shift(RoomData_tmp) )
+		OK OK OK
+	DONE
+	remove( RoomData_tmp, 0 )
+	envput( "RoomData_tmp", RoomData_tmp )
+	OUTPUT RoomData_GetMap_Output
+RESULT map
+
+# Grabs list data from RoomData. Recursive
+# Input:
+#		Nothing. Works on RoomData_tmp in memory
+# Output:
+#		RoomData_GetList_Output - A list of the current section
+FUNCTION RoomData_GetList()
+	SET list RoomData_tmp = envget("RoomData_tmp")
+	READY list RoomData_GetList_Output
+	WHILE RoomData_tmp[0] NEQ "]" REPEAT
+		IF RoomData_tmp[0] EQ "{" THEN
+			remove( RoomData_tmp, 0 )
+			envput( "RoomData_tmp", RoomData_tmp )			
+			append( RoomData_GetList_Output, RoomData_GetMap() )
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomData_tmp[0] EQ "[" THEN
+			remove( RoomData_tmp, 0 )
+			envput( "RoomData_tmp", RoomData_tmp )			
+			append( RoomData_GetList_Output, RoomData_GetList() )
+			RoomData_tmp = envget("RoomData_tmp")
+		ELSE IF RoomData_tmp[0] EQ "'" THEN
+			remove( RoomData_tmp, 0 )
+			append( RoomData_GetList_Output, shift(RoomData_tmp))
+		OK OK OK
+	DONE
+	remove( RoomData_tmp, 0 )
+	envput( "RoomData_tmp", RoomData_tmp )
+	OUTPUT RoomData_GetList_Output
+RESULT list
+
+# Unpacks Sprite Data Into map
+# Input:
+#		UnpackSpriteData_Input_List - List of data of one pixel of sprite
+# Output:
+#		Map of one pixel of sprite
+FUNCTION UnpackSpriteData(list UnpackSpriteData_Input_List)
+	OUTPUT {
+		"y": ToInt( Shift( UnpackSpriteData_Input_List ) ),
+		"x": ToInt( Shift( UnpackSpriteData_Input_List ) ),
+		"r": ToInt( Shift( UnpackSpriteData_Input_List ) ),
+		"g": ToInt( Shift( UnpackSpriteData_Input_List ) ),
+		"b": ToInt( Shift( UnpackSpriteData_Input_List ) ),
+		"a": ToInt( Shift( UnpackSpriteData_Input_List ) )
+	}
+RESULT map
+
+# Imports SpriteData to a sprite set
+# Input:
+#		ImportSpriteData_Input_List - Sprite datafile stored as a list of lines
+#		SpriteSet_Number - Sprite set to save to
+# Output:
+#		Nothing
+FUNCTION ImportSpriteData(list ImportSpriteData_Input_List, number SpriteSet_Number)
+	EACH ImportSpriteData_tmp_line IN ImportSpriteData_Input_List REPEAT
+		SET list ImportSpriteData_tmp_line_List = LineToList( ImportSpriteData_tmp_line, " " )
+		SpriteSet( SpriteSet_Number,
+			        toint( ImportSpriteData_tmp_line_List[ 1 ] ),
+			        toint(  ImportSpriteData_tmp_line_List[ 0] ),
+			        toint(  ImportSpriteData_tmp_line_List[ 2 ] ),
+			        toint(  ImportSpriteData_tmp_line_List[ 3 ] ),
+			        toint(  ImportSpriteData_tmp_line_List[ 4 ] ),
+			        toint(  ImportSpriteData_tmp_line_List[ 5 ] )
+		
+		)
+	DONE
+RESULT nothing
+
+FUNCTION ImportSpriteData2(list ImportSpriteData2_Input_List, number SpriteSet_Number)
+	EACH ImportSpriteData2_tmp_line IN ImportSpriteData2_Input_List REPEAT
+		SpriteSet( SpriteSet_Number,
+			        ( ImportSpriteData2_tmp_line[ 0 ] ),
+			        (  ImportSpriteData2_tmp_line[ 1] ),
+			        (  ImportSpriteData2_tmp_line[ 2 ] ),
+			        (  ImportSpriteData2_tmp_line[ 3 ] ),
+			        (  ImportSpriteData2_tmp_line[ 4 ] ),
+			        (  ImportSpriteData2_tmp_line[ 5 ] )
+		
+		)
+	DONE
+RESULT nothing
+
+# Loads SpriteData to a sprite set
+# Input:
+#		SpriteFile - Sprite datafile 
+#		SpriteSet_Number - Sprite set to save to
+# Output:
+#		Nothing
+FUNCTION LoadSpriteFromFile(string SpriteFile, number SpriteSet_Number)
+	SET list LoadSpriteFromFile_Data = DataRead( SpriteFile )
+	ImportSpriteData( LoadSpriteFromFile_Data, SpriteSet_Number )
+RESULT nothing
+
+FUNCTION LoadSpriteFromFileToList(string SpriteFile)
+	SET list LoadSpriteFromFileToList_Data = DataRead( SpriteFile )
+	READY list LSFTLOut
+	EACH ImportSpriteData_tmp_line IN LoadSpriteFromFileToList_Data REPEAT
+		SET list LoadSpriteFromFileToList_tmp_line_List = LineToList( ImportSpriteData_tmp_line, " " )
+		append( LSFTLOut,[
+			        toint( LoadSpriteFromFileToList_tmp_line_List[ 1 ] ),
+			        toint(  LoadSpriteFromFileToList_tmp_line_List[ 0] ),
+			        toint(  LoadSpriteFromFileToList_tmp_line_List[ 2 ] ),
+			        toint(  LoadSpriteFromFileToList_tmp_line_List[ 3 ] ),
+			        toint(  LoadSpriteFromFileToList_tmp_line_List[ 4 ] ),
+			        toint(  LoadSpriteFromFileToList_tmp_line_List[ 5 ] )]
+		
+		)
+	DONE
+	OUTPUT LSFTLOut
+RESULT list
+

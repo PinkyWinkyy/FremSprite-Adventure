@@ -1,0 +1,319 @@
+DEFINE _PATH_ software/Adventure
+DEFINE _Enemy_ _PATH_/Enemy
+
+FUNCTION EnemyCheckAttack( )
+	SET list EnemyMapKeys = GetKeys( EnemyList )
+	EACH EnemyMapKey IN EnemyMapKeys REPEAT
+		SET list EnemyPosTmp = [ EnemyList[EnemyMapKey][ 0 ], EnemyList[EnemyMapKey][ 1 ] ]
+		SET string EnemyDirTmp = EnemyList[EnemyMapKey][ 3 ]
+		SET list EnemyCollissionTmp = CheckCollisionEnemy2(  EnemyPosTmp[ 0 ], EnemyPosTmp[ 1 ] )
+		IF EnemyList[EnemyMapKey][ 11 ] EQ "Snake" THEN
+			IF EnemyDirTmp EQ "L" THEN 
+				SET boolean InSight = ( PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] - 1 OR PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] OR PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] + 1 ) AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] - 1 AND NOT EnemyCollissionTmp[ 1 ]
+				SET boolean InSight2 = PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] - 1 AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND NOT EnemyCollissionTmp[ 3 ]
+				SET boolean InSight3 = PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] + 1 AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND NOT EnemyCollissionTmp[ 2 ]
+				SET list OrigPosTmp = [ -1, 1 ]
+				SET list OrigESpr = EnemySpriteEW1
+				IF InSight THEN
+					SET list AttackPosTmp = [ -24, -8, 1, 1, -1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "L"
+				ELSE IF InSight2 THEN
+					SET list AttackPosTmp = [ -8, -24, 1, -1, 1, -1, -1, 1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "U"
+				ELSE IF InSight3 THEN
+					SET list AttackPosTmp = [ -8, 8, 1, 1, 1, 1, -1, 1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "D"
+				ELSE
+					SET list AttackPosTmp = [ -24, -8, 1, 1, -1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "L"
+				OK OK OK
+				SET string EnemyOppositeDirTmp = "R"
+				SET list EnemyOppositeDirFlip = [ 1, 1 ]
+				SET list EnemyMovePosTmp1 = [ EnemyList[EnemyMapKey][ 6 ] - 2, EnemyList[EnemyMapKey][ 7 ] ]
+				SET list EnemyMovePosTmp2 = [ Floor( EnemyMovePosTmp1[ 0 ] / 8 ), EnemyMovePosTmp1[ 1 ] / 8 ]
+			ELSE IF EnemyDirTmp EQ "R" THEN 
+				SET boolean InSight = ( PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] - 1 OR PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] OR PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] + 1 ) AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] + 1 AND NOT EnemyCollissionTmp[ 0 ]
+				SET boolean InSight2 = PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] - 1 AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND NOT EnemyCollissionTmp[ 3 ]
+				SET boolean InSight3 = PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] + 1 AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND NOT EnemyCollissionTmp[ 2 ]
+				SET list OrigPosTmp = [ 1, 1 ]
+				SET list OrigESpr = EnemySpriteEW1
+				IF InSight THEN
+					SET list AttackPosTmp = [ 8, -8, -1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "R"
+				ELSE IF InSight2 THEN
+					SET list AttackPosTmp = [ -8, -24, 1, -1, 1, -1, 1 ,1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "U"
+				ELSE IF InSight3 THEN
+					SET list AttackPosTmp = [ -8, 8, 1, 1, 1 ,1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "D"
+				ELSE
+					SET list AttackPosTmp = [ 8, -8, -1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "R"
+				OK OK OK
+				SET string EnemyOppositeDirTmp = "L"
+				SET list EnemyOppositeDirFlip = [ -1, -1 ]
+				SET list EnemyMovePosTmp1 = [ EnemyList[EnemyMapKey][ 6 ] + 2, EnemyList[EnemyMapKey][ 7 ] ]
+				SET list EnemyMovePosTmp2 = [ Ceil( EnemyMovePosTmp1[ 0 ] / 8 ), EnemyMovePosTmp1[ 1 ] / 8 ]
+			ELSE IF EnemyDirTmp EQ "U" THEN 
+				SET boolean InSight = ( PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] - 1 OR PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] OR PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] + 1 ) AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] - 1 AND NOT EnemyCollissionTmp[ 3]
+				SET boolean InSight2 = PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] - 1 AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] AND NOT EnemyCollissionTmp[ 1 ]
+				SET boolean InSight3 = PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] + 1 AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] AND NOT EnemyCollissionTmp[ 0 ]
+				SET list OrigPosTmp = [ 1, -1 ]
+				SET list OrigESpr = EnemySpriteNS1
+				IF InSight THEN
+					SET list AttackPosTmp = [ -8, -24, 1, -1, 1, -1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "U"
+				ELSE IF InSight2 THEN
+					SET list AttackPosTmp = [ -24, -8, 1, 1, -1, 1, 1, -1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "L"
+				ELSE IF InSight3 THEN
+					SET list AttackPosTmp = [ 8, -8, -1, 1, 1, 1, 1, -1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "R"
+				ELSE 
+					SET list AttackPosTmp = [ -8, -24, 1, -1, 1, -1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "U"
+				OK OK OK
+				SET string EnemyOppositeDirTmp = "D"
+				SET list EnemyOppositeDirFlip = [ 1, 1 ]
+				SET list EnemyMovePosTmp1 = [ EnemyList[EnemyMapKey][ 6 ], EnemyList[EnemyMapKey][ 7 ] - 2 ]
+				SET list EnemyMovePosTmp2 = [ ( EnemyMovePosTmp1[ 0 ] / 8 ), Floor(EnemyMovePosTmp1[ 1 ] / 8) ]
+			ELSE IF EnemyDirTmp EQ "D" THEN
+				SET boolean InSight = ( PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] - 1 OR PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] OR PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] + 1 ) AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] + 1 AND NOT EnemyCollissionTmp[ 2 ]
+				SET boolean InSight2 = PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] - 1 AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] AND NOT EnemyCollissionTmp[ 1 ]
+				SET boolean InSight3 = PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] + 1 AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1 ] AND NOT EnemyCollissionTmp[ 0 ]
+				SET list OrigPosTmp = [ 1, 1 ]
+				SET list OrigESpr = EnemySpriteNS1
+				IF InSight THEN
+					SET list AttackPosTmp = [ -8, 8, 1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "D"
+				ELSE IF InSight2 THEN
+					SET list AttackPosTmp = [ -24, -8, 1, 1, -1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "L"
+				ELSE IF InSight3 THEN
+					SET list AttackPosTmp = [ 8, -8, -1, 1, 1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteEW
+					SET list CurESpr1 = EnemySpriteEW1
+					SET list CurESpr2 = EnemySpriteEW2
+					SET string CurEDur = "R"
+				ELSE
+					SET list AttackPosTmp = [ -8, 8, 1, 1, 1, 1 ]
+					SET list CurAttSpr = AttackSpriteNS
+					SET list CurESpr1 = EnemySpriteNS1
+					SET list CurESpr2 = EnemySpriteNS2
+					SET string CurEDur = "D"
+				OK OK OK
+				SET string EnemyOppositeDirTmp = "U"
+				SET list EnemyOppositeDirFlip = [ -1, -1 ]
+				SET list EnemyMovePosTmp1 = [ EnemyList[EnemyMapKey][ 6 ], EnemyList[EnemyMapKey][ 7 ] + 2 ]
+				SET list EnemyMovePosTmp2 = [ ( EnemyMovePosTmp1[ 0 ] / 8 ), Ceil(EnemyMovePosTmp1[ 1 ] / 8) ]
+			OK OK OK OK
+			IF InSight OR InSight2 OR InSight3 THEN
+				IF EnemyList[EnemyMapKey][ 4 ] EQ 0 THEN
+					EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1
+					ImportSpriteData2( CurESpr2, EnemyList[EnemyMapKey][ 2 ] )
+					spriteflip( EnemyList[EnemyMapKey][ 2 ] , AttackPosTmp[ 4 ], AttackPosTmp[ 5 ] )
+					# Makes this MAP fail
+					IF Work_Debug THEN
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], CurEDur ]
+						EnemyList[EnemyMapKey][ 10 ] = DirTmpThing[1]
+						EnemyList[EnemyMapKey][ 3 ] = DirTmpThing[0]
+					ELSE
+						EnemyList[EnemyMapKey][ 10 ] = CurEDur
+					OK
+					UpdateSprite = true
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] LTE 5 THEN
+					EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1
+					IF CurEDur NEQ EnemyList[EnemyMapKey][ 10 ] THEN
+						ImportSpriteData2( CurESpr2, EnemyList[EnemyMapKey][ 2 ] )
+						spriteflip( EnemyList[EnemyMapKey][ 2 ] , AttackPosTmp[ 4 ], AttackPosTmp[ 5 ] )
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], CurEDur ]
+						EnemyList[EnemyMapKey][ 10 ] = DirTmpThing[1]
+						EnemyList[EnemyMapKey][ 3 ] = DirTmpThing[0]
+						UpdateSprite = true
+					OK
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] EQ 6 THEN
+					UpdateAttack = 1
+					AttackSpritenum = CurrentSprite
+					ImportSpriteData2( CurAttSpr, AttackSpritenum )
+					CurrentSprite = CurrentSprite + 1
+					SpritePos( AttackSpritenum, EnemyPosTmp[ 0 ] * 8 + AttackPosTmp[ 0 ], EnemyPosTmp[ 1 ] * 8 + AttackPosTmp[ 1 ] )
+					spriteflip( AttackSpritenum, AttackPosTmp[ 2 ], AttackPosTmp[ 3 ] )
+					EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1 
+					SpriteScale( AttackSpritenum,  2,  2 )  
+					SysPut( "B", 42 + AttackSpritenum, true )
+					ImportSpriteData2( CurESpr1, EnemyList[EnemyMapKey][ 2 ] )
+					spriteflip( EnemyList[EnemyMapKey][ 2 ] , AttackPosTmp[ 4 ], AttackPosTmp[ 5 ] )
+					UpdateSprite = true
+					GotHit = true
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] GT 6 AND EnemyList[EnemyMapKey][ 4 ] LTE 12 THEN
+					EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1	
+					IF CurEDur NEQ EnemyList[EnemyMapKey][ 10 ] THEN
+						ImportSpriteData2( CurESpr1, EnemyList[EnemyMapKey][ 2 ] )
+						spriteflip( EnemyList[EnemyMapKey][ 2 ] , AttackPosTmp[ 4 ], AttackPosTmp[ 5 ] )
+						SET string DirTmpThing = EnemyList[EnemyMapKey][ 3 ]
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], CurEDur ]
+						EnemyList[EnemyMapKey][ 10 ] = DirTmpThing[1]
+						EnemyList[EnemyMapKey][ 3 ] = DirTmpThing[0]
+						UpdateSprite = true
+					OK
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] EQ 13 THEN
+					IF CurEDur NEQ EnemyList[EnemyMapKey][ 10 ] THEN
+						ImportSpriteData2( CurESpr1, EnemyList[EnemyMapKey][ 2 ] )
+						spriteflip( EnemyList[EnemyMapKey][ 2 ] , AttackPosTmp[ 4 ], AttackPosTmp[ 5 ] )
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], CurEDur ]
+						EnemyList[EnemyMapKey][ 10 ] = DirTmpThing[1]
+						EnemyList[EnemyMapKey][ 3 ] = DirTmpThing[0]
+						UpdateSprite = true
+					OK
+					EnemyList[EnemyMapKey][ 4 ] = 0
+				OK OK OK OK OK
+			ELSE
+				IF EnemyList[EnemyMapKey][ 4 ] GT 0 AND EnemyList[EnemyMapKey][ 4 ] LTE 6 THEN
+					ImportSpriteData2( OrigESpr, EnemyList[EnemyMapKey][ 2 ] )
+					spriteflip( EnemyList[EnemyMapKey][ 2 ] , OrigPosTmp[ 0 ], OrigPosTmp[ 1 ] )
+					SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], CurEDur ]
+					EnemyList[EnemyMapKey][ 10 ] = DirTmpThing[1]
+					EnemyList[EnemyMapKey][ 3 ] = DirTmpThing[0]
+					UpdateSprite = true
+					EnemyList[EnemyMapKey][ 4 ] = 0	
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] GT 6 AND EnemyList[EnemyMapKey][ 4 ] LTE 12 THEN
+					IF EnemyList[EnemyMapKey][ 3 ] NEQ EnemyList[EnemyMapKey][ 10 ] THEN
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], EnemyList[EnemyMapKey][ 10 ] ]
+						EnemyList[EnemyMapKey][ 10 ] = EnemyList[EnemyMapKey][ 3 ]
+						ImportSpriteData2( OrigESpr, EnemyList[EnemyMapKey][ 2 ] )
+						spriteflip( EnemyList[EnemyMapKey][ 2 ] , OrigPosTmp[ 0 ], OrigPosTmp[ 1 ] )
+						UpdateSprite = true
+					OK
+					EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1	
+				ELSE IF EnemyList[EnemyMapKey][ 4 ] EQ 13 THEN
+					IF EnemyList[EnemyMapKey][ 3 ] NEQ EnemyList[EnemyMapKey][ 10 ] THEN
+						SET list DirTmpThing = [ EnemyList[EnemyMapKey][ 3 ], EnemyList[EnemyMapKey][ 10 ] ]
+						EnemyList[EnemyMapKey][ 10 ] = EnemyList[EnemyMapKey][ 3 ]
+						ImportSpriteData2( OrigESpr, EnemyList[EnemyMapKey][ 2 ] )
+						spriteflip( EnemyList[EnemyMapKey][ 2 ] , OrigPosTmp[ 0 ], OrigPosTmp[ 1 ] )
+						UpdateSprite = true
+					OK
+					EnemyList[EnemyMapKey][ 4 ] = 0
+				OK OK OK
+				SET list Enemy_MoveCheck = CheckCollisionEnemy( EnemyMovePosTmp2[ 0 ], EnemyMovePosTmp2[ 1 ], EnemyMapKey )
+				IF Enemy_MoveCheck[0] THEN
+					IF Enemy_MoveCheck[1] EQ 0 THEN
+						EnemyList[EnemyMapKey][ 3 ] = EnemyOppositeDirTmp
+						SpriteFlip( EnemyList[EnemyMapKey][ 2 ], EnemyOppositeDirFlip[0], EnemyOppositeDirFlip[1] )
+					OK
+				ELSE
+					IF EnemyMovePosTmp1[ 0 ] MOD 8 EQ 0 AND EnemyMovePosTmp1[ 1 ] MOD 8 EQ 0 THEN
+						EnemyList[EnemyMapKey][ 0 ] = EnemyMovePosTmp2[ 0 ]
+						EnemyList[EnemyMapKey][ 1 ] = EnemyMovePosTmp2[ 1 ]
+					OK
+					EnemyList[EnemyMapKey][ 8 ] = EnemyMovePosTmp2[ 0 ]
+					EnemyList[EnemyMapKey][ 9 ] = EnemyMovePosTmp2[ 1 ]
+					EnemyList[EnemyMapKey][ 6 ] = EnemyMovePosTmp1[ 0 ]
+					EnemyList[EnemyMapKey][ 7 ] = EnemyMovePosTmp1[ 1 ]
+					SpritePos( EnemyList[EnemyMapKey][ 2 ],  EnemyMovePosTmp1[ 0 ], EnemyMovePosTmp1[ 1 ] )
+				OK
+			OK
+		ELSE IF EnemyList[EnemyMapKey][ 11 ] EQ "Bow" THEN
+			IF EnemyDirTmp EQ "L" AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1] AND PlayerPos[ 0 ] LT EnemyPosTmp[ 0 ] AND PlayerPos[ 0] GTE EnemyPosTmp[ 0 ] - 5 AND EnemyList[EnemyMapKey][ 4 ] EQ 0 THEN
+				EnemyList[EnemyMapKey][ 4 ] = 1
+				FireBolt(EnemyMapKey,EnemyPosTmp[ 0 ], EnemyPosTmp[ 1 ], "L", -4, 0)
+			ELSE IF EnemyDirTmp EQ "R" AND PlayerPos[ 1 ] EQ EnemyPosTmp[ 1] AND PlayerPos[ 0 ] GT EnemyPosTmp[ 0 ] AND PlayerPos[ 0] LTE EnemyPosTmp[ 0 ] + 5 AND EnemyList[EnemyMapKey][ 4 ] EQ 0 THEN
+				EnemyList[EnemyMapKey][ 4 ] = 1
+				FireBolt(EnemyMapKey,EnemyPosTmp[ 0 ], EnemyPosTmp[ 1 ], "R", 4, 0)
+			ELSE IF EnemyDirTmp EQ "U" AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND PlayerPos[ 1 ] LT EnemyPosTmp[ 1 ] AND PlayerPos[ 1 ] GTE EnemyPosTmp[ 1 ] - 5 AND EnemyList[EnemyMapKey][ 4 ] EQ 0 THEN
+				EnemyList[EnemyMapKey][ 4 ] = 1
+				FireBolt(EnemyMapKey,EnemyPosTmp[ 0 ], EnemyPosTmp[ 1 ], "U", 0, -4)
+			ELSE IF EnemyDirTmp EQ "D" AND PlayerPos[ 0 ] EQ EnemyPosTmp[ 0 ] AND PlayerPos[ 1 ] GT EnemyPosTmp[ 1 ] AND PlayerPos[ 1 ] LTE EnemyPosTmp[ 1 ] + 5 AND EnemyList[EnemyMapKey][ 4 ] EQ 0 THEN
+				EnemyList[EnemyMapKey][ 4 ] = 1
+				FireBolt(EnemyMapKey,EnemyPosTmp[ 0 ], EnemyPosTmp[ 1 ], "D", 0, 4)
+			ELSE IF EnemyList[EnemyMapKey][ 4 ] GT 0 AND EnemyList[EnemyMapKey][ 4 ] LT 10 THEN
+				EnemyList[EnemyMapKey][ 4 ] = EnemyList[EnemyMapKey][ 4 ] + 1
+			ELSE IF EnemyList[EnemyMapKey][ 4 ] EQ 10 THEN
+				EnemyList[EnemyMapKey][ 4 ] = 0
+			OK OK OK OK OK OK
+		OK OK
+	DONE
+RESULT nothing
+
+FUNCTION FireBolt(string EnemyName, number x, number y, string dir, number mx, number my)
+	append(BoltsFired, [ EnemyName, CurrentBoltSprite,  x, y, x*8, y*8, dir, mx, my])
+	IF dir EQ "D" THEN
+		ImportSpriteData2(BoltSpriteNS, CurrentBoltSprite )
+		SpritePos( CurrentBoltSprite,  x*8,  y*8)	
+		spriteflip( CurrentBoltSprite, 1, 1 )
+		Sysput( "B", 42 + CurrentBoltSprite , true )
+	ELSE IF dir EQ "R" THEN
+		ImportSpriteData2(BoltSpriteNS, CurrentBoltSprite )	
+		SpritePos( CurrentBoltSprite,  x*8,  y*8)	
+		spriteflip( CurrentBoltSprite, 1, 1 )
+		Sysput( "B", 42 + CurrentBoltSprite , true )
+	ELSE IF dir EQ "U" THEN
+		ImportSpriteData2(BoltSpriteNS, CurrentBoltSprite )
+		SpritePos( CurrentBoltSprite,  x*8,  y*8)		
+		spriteflip( CurrentBoltSprite, 1, -1 )
+		Sysput( "B", 42 + CurrentBoltSprite , true )
+	ELSE IF dir EQ "L" THEN
+		ImportSpriteData2(BoltSpriteNS, CurrentBoltSprite )	
+		SpritePos( CurrentBoltSprite,  x*8,  y*8)	
+		spriteflip( CurrentBoltSprite, -1, 1 )
+		Sysput( "B", 42 + CurrentBoltSprite , true )
+	OK OK OK OK 
+	IF CurrentBoltSprite LT 9 THEN
+		CurrentBoltSprite = CurrentBoltSprite + 1
+	ELSE
+		CurrentBoltSprite = 6
+	OK
+RESULT nothing 
+	
+	
+	
+	
+	
+	
+	
+FUNCTION LoadAttacks( )
+	AttackSpriteNS = LoadSpriteFromFileToList( "_Enemy_/Attack" )
+	AttackSpriteEW = LoadSpriteFromFileToList( "_Enemy_/Attack2" )
+RESULT nothing 

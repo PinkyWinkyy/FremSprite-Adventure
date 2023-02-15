@@ -1,0 +1,176 @@
+FUNCTION Action( string dir )
+	IF dir EQ "SPACE"  THEN
+		IF FirePlayerCounter EQ 0 AND PowerReady EQ 2 THEN
+			StartPlayerFire()
+		OK
+	ELSE
+		IF UpdateSword EQ 0 THEN
+			IF dir EQ "W" THEN
+				ImportSpriteData2(SwordSpriteNS, SwordSpriteNum )
+				SpritePos(SwordSpriteNum, PlayerPos[0]*8 , PlayerPos[1]*8 - 8)
+				spriteflip(SwordSpriteNum, 1, 1)
+				SysPut("B", 42 + SwordSpriteNum, true)
+			ELSE IF dir EQ "S" THEN
+				ImportSpriteData2(SwordSpriteNS, SwordSpriteNum )
+				SpritePos(SwordSpriteNum, PlayerPos[0]*8 , PlayerPos[1]*8 + 8)
+				spriteflip(SwordSpriteNum, 1, -1)
+				SysPut("B", 42 + SwordSpriteNum, true)
+			
+			ELSE IF dir EQ "D" THEN
+				ImportSpriteData2(SwordSpriteEW, SwordSpriteNum )
+				SpritePos(SwordSpriteNum, PlayerPos[0]*8 + 8, PlayerPos[1]*8)
+				spriteflip(SwordSpriteNum, -1, 1)
+				SysPut("B", 42 + SwordSpriteNum, true)
+			
+			ELSE IF dir EQ "A" THEN
+				ImportSpriteData2(SwordSpriteEW, SwordSpriteNum )
+				SpritePos(SwordSpriteNum, PlayerPos[0]*8 - 8, PlayerPos[1]*8)
+				spriteflip(SwordSpriteNum, 1, 1)
+				SysPut("B", 42 + SwordSpriteNum, true)
+			
+			OK OK OK OK
+				UpdateSword = 1
+
+			IF BossActive THEN
+				IF CheckHit(dir+"K", PlayerPos) THEN
+					EnemyHitSound()
+				ELSE
+					SwordSound()
+				OK
+			ELSE
+				IF CheckForHazard(dir+"K", PlayerPos) THEN
+					EnemyHitSound()
+				ELSE
+					SwordSound()
+				OK
+			OK
+		OK
+	OK
+RESULT nothing
+
+FUNCTION StartPlayerFire()
+	IF FirePlayerCounter EQ 0 THEN
+		if PlayerDir EQ "U" THEN
+			FirePlayerDir = [0,-8,"U"]
+		ELSE if PlayerDir EQ "D" THEN
+			FirePlayerDir = [0,8,"D"]
+		ELSE if PlayerDir EQ "L" THEN
+			FirePlayerDir = [-8,0,"L"]
+		ELSE if PlayerDir EQ "R" THEN
+			FirePlayerDir = [8,0,"R"]
+		OK OK OK OK
+		FirePlayerPos_X = PlayerPos_X
+		FirePlayerPos_Y = PlayerPos_Y
+		SpritePos(FireSprite_Player, FirePlayerPos_X, FirePlayerPos_Y)
+		SysPut("B", 42 + FireSprite_Player, true)
+		FirePlayerCounter = 1
+		FireSound()
+		UpdateSprite = true
+	OK
+RESULT nothing
+
+FUNCTION UpdatePlayerFirePos()
+	UpdateLegend = true
+	IF FirePlayerCounter EQ 1 THEN
+		IF CheckCollisionWithDoors(FirePlayerPos_X, FirePlayerPos_Y) THEN
+			SysPut("B", 42 + FireSprite_Player, false)
+			FirePlayerCounter = 2
+			UpdateSprite = true
+		OK
+		IF FirePlayerCounter eq 1 THEN
+			IF BossActive THEN
+				IF CheckHit( FirePlayerDir[2], [ FirePlayerPos_X / 8, FirePlayerPos_Y / 8 ] ) THEN
+					SysPut( "B", 42 + FireSprite_Player, false )
+					FirePlayerCounter = 2
+				OK					
+			ELSE
+				IF CheckForHazard( FirePlayerDir[2], [ FirePlayerPos_X / 8, FirePlayerPos_Y / 8 ] ) THEN
+					SysPut( "B", 42 + FireSprite_Player, false )
+					FirePlayerCounter = 2
+				OK	
+			OK
+			FirePlayerPos_Y = FirePlayerPos_Y + FirePlayerDir[1]
+			FirePlayerPos_X = FirePlayerPos_X + FirePlayerDir[0]
+			IF FirePlayerCounter EQ 1 THEN
+				IF Size(Tree) GT 0 THEN
+					SET list TreeTmp = PosCheckIn( [ FirePlayerPos_X / 8, FirePlayerPos_Y / 8 ],  Tree ) 
+					IF TreeTmp[ 0 ] THEN
+						Remove( Tree,  TreeTmp[ 1 ] )
+						Scene[ FirePlayerPos_Y / 8 ][ FirePlayerPos_X / 8 ] = "F"
+						SysPut(  "B",  42 + FireSprite_Player,  false  )
+						FirePlayerCounter = 2
+						UpdateScene()
+						UpdateGrid = true
+						UpdateSprite = true
+					OK
+				OK
+			OK
+				IF FirePlayerCounter EQ 1 THEN
+					SpritePos( FireSprite_Player, FirePlayerPos_X, FirePlayerPos_Y )
+					UpdateSprite = true 
+				OK
+		OK
+	ELSE IF FirePlayerCounter LTE 10 AND FirePlayerCounter GTE 2 THEN
+		FirePlayerCounter = FirePlayerCounter + 1
+	ELSE IF FirePlayerCounter EQ 11 THEN
+		FirePlayerCounter = 0
+	OK OK OK
+	
+RESULT nothing
+
+FUNCTION CheckHit(string dir, list pos)
+	READY list PlayerPosTmp
+	IF dir EQ "WK" OR dir EQ "U" THEN
+		PlayerPosTmp = [ pos[0], pos[1] - 2 ]
+	ELSE IF dir EQ "SK" OR dir EQ "D" THEN
+		PlayerPosTmp = [ pos[0] , pos[1] + 2]
+	ELSE IF dir EQ "AK" OR dir EQ "L" THEN
+		PlayerPosTmp = [ pos[0]- 2 , pos[1] ]
+	ELSE IF dir EQ "DK" OR dir EQ "R" THEN
+		PlayerPosTmp = [ pos[0] + 2, pos[1] ]
+	OK OK OK OK
+	
+	IF PlayerPosTmp[0] GTE BossPos_X / 8 AND PlayerPosTmp[0] LTE BossPos_X / 8 + 4 AND PlayerPosTmp[1] GTE BossPos_Y / 8 AND PlayerPosTmp[1] LTE BossPos_Y / 8 + 4 THEN
+		BossHit = true
+		OUTPUT true
+	OK
+	OUTPUT false
+RESULT boolean
+	
+	
+FUNCTION CheckForHazard(string dir, list pos)
+	READY list PlayerPosTmp
+	IF dir EQ "WK" OR dir EQ "U" THEN
+		PlayerPosTmp = [ pos[0], pos[1] - 1 ]
+	ELSE IF dir EQ "SK" OR dir EQ "D" THEN
+		PlayerPosTmp = [ pos[0] , pos[1] + 1]
+	ELSE IF dir EQ "AK" OR dir EQ "L" THEN
+		PlayerPosTmp = [ pos[0]- 1 , pos[1] ]
+	ELSE IF dir EQ "DK" OR dir EQ "R" THEN
+		PlayerPosTmp = [ pos[0] + 1, pos[1] ]
+	OK OK OK OK
+	SET list EnemiesKeys = GetKeys(EnemyList)
+	EACH EnemiesKey IN EnemiesKeys REPEAT
+		IF EnemyList[EnemiesKey][0] EQ PlayerPosTmp[0] AND EnemyList[EnemiesKey][1] EQ PlayerPosTmp[1] THEN
+			NumHazards = NumHazards - 1
+			sysput( "B", 42 + EnemyList[EnemiesKey][2], false )
+			remove( EnemyList, EnemiesKey )
+			append(EnemyDead, EnemiesKey )
+			UpdateSprite = true
+			EnemyHit = true
+			IF NumHazards EQ 0 THEN
+				UpdateScene()
+				UpdateGrid = true
+			OK
+			OUTPUT true
+		OK
+	DONE
+	OUTPUT false
+RESULT boolean
+
+
+
+
+
+
+

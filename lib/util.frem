@@ -1,0 +1,693 @@
+DEFINE _PATH_ software/Adventure
+DEFINE _lib_ _PATH_/lib
+DEFINE _rooms_ _PATH_/rooms
+DEFINE _player_ _PATH_/player
+DEFINE _boss_ _PATH_/boss
+
+
+# Sets up valriabls and system registers. Only run once
+FUNCTION SetUp()
+	# Connect host keyboard to system
+	SysPut( "B", 5, true )
+	# Enable the Grid layer
+	SysPut( "B", 20, true )
+	# Enable the Sprite layer
+	SysPut( "B", 40, true )
+	# Enable Sprite 0
+	SysPut( "B", 42, true )
+	# Enable the pixel layer
+	SysPut( "B", 30, true )
+	# Font Settings
+	SysPut( "N", 31, 0 )
+	SysPut( "N", 32, -3 )
+	SysPut( "N", 33, 0 )
+	SysPut( "N", 30, 25 )
+	SET list MoveKeys = [ "UP",
+						 "RIGHT",
+						 "LEFT",
+						 "DOWN",
+						 "W",
+						 "A",
+						 "S",
+						 "D",
+						 "SPACE" 
+						 ] 
+	EnvPut( "MoveKeys",MoveKeys )
+	
+	# Sprites
+	# Player
+	SET number PlayerSpriteNum = 0
+	EnvPut( "PlayerSpriteNum",PlayerSpriteNum )
+	READY list PlayerSpriteNS 
+	EnvPut( "PlayerSpriteNS",PlayerSpriteNS )
+	READY list PlayerSpriteEW 
+	EnvPut( "PlayerSpriteEW",PlayerSpriteEW )
+	SET number SwordSpriteNum = 1
+	EnvPut( "SwordSpriteNum",SwordSpriteNum )
+#	SET number CurrentPlayerSprite = PlayerSpriteEW
+#	EnvPut( "PlayerSpriteEW",PlayerSpriteEW )
+	SET number CurrentPlayerSprite = 0
+	EnvPut( "CurrentPlayerSprite",CurrentPlayerSprite )
+	SET number HeartSprite1 = 2
+	EnvPut( "HeartSprite1",HeartSprite1 )
+	SET number HeartSprite2 = 3
+	EnvPut( "HeartSprite2",HeartSprite2 )
+	SET number HeartSprite3 = 4
+	EnvPut( "HeartSprite3",HeartSprite3 )
+	SET number FireSprite_Player = 5
+	EnvPut( "FireSprite_Player",FireSprite_Player )
+	SET number CurrentBoltSprite = 6
+	EnvPut( "CurrentBoltSprite",CurrentBoltSprite )
+	SET number MaxBoltSprite = 9
+	EnvPut( "MaxBoltSprite",MaxBoltSprite )
+	READY number PowerSprite 
+	EnvPut( "PowerSprite",PowerSprite )
+	READY list SwordSpriteNS 
+	EnvPut( "SwordSpriteNS",SwordSpriteNS )
+	READY list SwordSpriteEW 
+	EnvPut( "SwordSpriteEW",SwordSpriteEW )
+	# Boss
+	READY number FireSprite_Boss 
+	EnvPut( "FireSprite_Boss",FireSprite_Boss )
+	READY number BossSprite1 
+	EnvPut( "BossSprite1",BossSprite1 )
+	READY List BossSprite2 
+	EnvPut( "BossSprite2",BossSprite2 )
+	READY list BossSprite3
+	EnvPut( "BossSprite3",BossSprite3 )
+	# Enemy
+	READY list  AttackSpriteNS 
+	EnvPut( "AttackSpriteNS",AttackSpriteNS )
+	READY list  AttackSpriteEW 
+	EnvPut( "AttackSpriteEW",AttackSpriteEW )
+	READY number AttackSpritenum 
+	EnvPut( "AttackSpritenum",AttackSpritenum )
+	SET number DefEnemySprite = 16
+	EnvPut( "DefEnemySprite",DefEnemySprite )
+	READY list  EnemySpriteNS1 
+	EnvPut( "EnemySpriteNS1",EnemySpriteNS1 )
+	READY list  EnemySpriteEW1 
+	EnvPut( "EnemySpriteEW1",EnemySpriteEW1 )
+	READY list  EnemySpriteNS2 
+	EnvPut( "EnemySpriteNS2",EnemySpriteNS2 )
+	READY list  EnemySpriteEW2 
+	EnvPut( "EnemySpriteEW2",EnemySpriteEW2 )
+	SET number CurrentSprite = 10
+	EnvPut( "CurrentSprite",CurrentSprite )
+	# Map
+	READY number KeySprite
+	EnvPut( "KeySprite",KeySprite )
+	
+	# Map Values
+	# Room
+	SET string CurrentRoom = "start"
+	EnvPut( "CurrentRoom",CurrentRoom )
+	READY string CurrentRoomMap
+	EnvPut( "CurrentRoomMap",CurrentRoomMap )
+	READY string CurrentRoomAddress
+	EnvPut( "CurrentRoomAddress",CurrentRoomAddress )
+	READY list KeyPos
+	EnvPut( "KeyPos",KeyPos )
+	# Stores
+	READY map RoomData
+	EnvPut( "RoomData",RoomData )
+	READY list RoomsBeen
+	EnvPut( "RoomsBeen",RoomsBeen )
+	READY list HaveKey
+	EnvPut( "HaveKey",HaveKey )
+	READY list Scene
+	EnvPut( "Scene",Scene )
+	#READY list Hazards
+	#EnvPut( "Hazards",Hazards )
+	READY number NumHazards
+	EnvPut( "NumHazards",NumHazards )
+	READY list Walls
+	EnvPut( "Walls",Walls )
+	READY list ButtonOnMap
+	EnvPut( "ButtonOnMap",ButtonOnMap )
+	READY list Collisions
+	EnvPut( "Collisions",Collisions )
+	READY list Collisions_DoorsAndWalls
+	EnvPut( "Collisions_DoorsAndWalls",Collisions_DoorsAndWalls )
+	READY list Collectables
+	EnvPut( "Collectables",Collectables )
+	
+	# Sound
+	SET number Ch2Sound = 0
+	EnvPut( "Ch2Sound",Ch2Sound )
+	SET number Ch2Cnt = 0
+	EnvPut( "Ch2Cnt",Ch2Cnt )
+	
+	# Player Values
+	READY list PlayerPos
+	EnvPut( "PlayerPos",PlayerPos )
+	READY list PowerPos
+	EnvPut( "PowerPos",PowerPos )
+	READY number PlayerPos_X
+	EnvPut( "PlayerPos_X",PlayerPos_X )
+	READY number PlayerPos_Y
+	EnvPut( "PlayerPos_Y",PlayerPos_Y )
+	SET string PlayerDir = "R"
+	EnvPut( "PlayerDir",PlayerDir )
+	SET boolean GotHit = false
+	EnvPut( "GotHit",GotHit )
+	SET boolean PlayerInvincible = false
+	EnvPut( "PlayerInvincible",PlayerInvincible )
+	SET boolean PushPowerActive = true
+	EnvPut( "PushPowerActive",PushPowerActive )
+	SET number PlayerLives = 3
+	EnvPut( "PlayerLives",PlayerLives )
+	READY number FirePlayerPos_X
+	EnvPut( "FirePlayerPos_X",FirePlayerPos_X )
+	READY number FirePlayerPos_Y
+	EnvPut( "FirePlayerPos_Y",FirePlayerPos_Y )
+	READY list FirePlayerDir
+	EnvPut( "FirePlayerDir",FirePlayerDir )
+	SET number FirePlayerCounter = 0
+	EnvPut( "FirePlayerCounter",FirePlayerCounter )
+	SET number PowerReady = 0 
+	EnvPut( "PowerReady",PowerReady ) 
+	SET number NumKeysCollected = 0
+	EnvPut( "NumKeysCollected",NumKeysCollected )
+	SET string OnIce = "0"
+	EnvPut( "OnIce",OnIce )
+	
+	
+	#Boss Values
+	READY number BossPos_X
+	EnvPut( "BossPos_X",BossPos_X )
+	READY number BossPos_Y
+	EnvPut( "BossPos_Y",BossPos_Y )
+	READY number BossPosDif_X
+	EnvPut( "BossPosDif_X",BossPosDif_X )
+	READY number BossPosDif_Y
+	EnvPut( "BossPosDif_Y",BossPosDif_Y )
+	READY number FireBossPos_X
+	EnvPut( "FireBossPos_X",FireBossPos_X )
+	READY number FireBossPos_Y
+	EnvPut( "FireBossPos_Y",FireBossPos_Y )
+	READY number FirePosDif_X
+	EnvPut( "FirePosDif_X",FirePosDif_X )
+	READY number FirePosDif_Y
+	EnvPut( "FirePosDif_Y",FirePosDif_Y )
+	READY string BossDir
+	EnvPut( "BossDir",BossDir )
+	READY list BossHitBox
+	EnvPut( "BossHitBox",BossHitBox )
+	SET boolean BossActive = false 
+	EnvPut( "BossActive",BossActive ) 
+	SET number BossLives = 1
+	EnvPut( "BossLives",BossLives )
+	SET number FireBossCounter = 0
+	EnvPut( "FireBossCounter",FireBossCounter )
+	SET boolean BossHit = false
+	EnvPut( "BossHit",BossHit )
+	READY number CurrentBossSprite
+	EnvPut( "CurrentBossSprite",CurrentBossSprite )
+	READY list PushableBlocks
+	EnvPut( "PushableBlocks",PushableBlocks )
+	READY list Tree
+	EnvPut( "Tree",Tree )
+	READY list BoltsFired
+	EnvPut( "BoltsFired",BoltsFired )
+	
+	# Enemy Values
+	READY map EnemyList
+	EnvPut( "EnemyList",EnemyList )
+	READY list EnemyDead
+	EnvPut( "EnemyDead",EnemyDead )
+	SET boolean EnemyHit = false
+	EnvPut( "EnemyHit",EnemyHit )
+	
+	# Update Checks For Speed
+	SET boolean UpdateGrid = true
+	EnvPut( "UpdateGrid",UpdateGrid )
+	SET boolean UpdatePixel = true
+	EnvPut( "UpdatePixel",UpdatePixel )
+	SET boolean UpdateSprite = true
+	EnvPut( "UpdateSprite",UpdateSprite )
+	SET boolean UpdateLegend = true
+	EnvPut( "UpdateLegend",UpdateLegend )
+	SET number UpdateSword = 0
+	EnvPut( "UpdateSword",UpdateSword )
+	SET number UpdateAttack = 0
+	EnvPut( "UpdateAttack",UpdateAttack )
+	
+	# Clear any previous layer items
+	ClearSprites()
+	ClearGrid()
+	ClearPixels()
+	cls()
+	Sync()
+	
+	
+RESULT nothing
+
+
+# Clears data for new room
+FUNCTION Clear()
+	READY map RoomData
+	READY list Scene
+	READY list PlayerPos
+	READY number NumHazards
+	READY list Walls
+	READY list Collisions
+	READY list Collisions_DoorsAndWalls
+	READY list Collectables
+	READY map EnemyList
+	READY list ButtonOnMap
+	READY list Tree
+	READY list KeyPos
+	READY list PushableBlocks
+	READY list PowerPos
+	READY list BoltsFired
+	SET number CurrentSprite = 10
+	SET number CurrentBoltSprite = 6
+	
+	ClearSprites()
+	ClearGrid()
+	ClearPixels()
+	Sync()
+RESULT nothing	
+
+# Updates screen and sounds	
+FUNCTION Update()
+	UpdatePlayerFirePos()
+	IF size(BoltsFired) GT 0 THEN
+	SET list BoltsFired_TMP = BoltsFired
+		EACH idx, Bolt IN BoltsFired_TMP REPEAT
+			SpritePos( Bolt[ 1] ,  Bolt[4] + Bolt[7],  Bolt[5] + Bolt[ 8] )	
+			BoltsFired[ idx ][ 4 ] = Bolt[4] + Bolt[7]
+			BoltsFired[ idx ][ 5 ] = Bolt[5] + Bolt[8]
+			BoltsFired[ idx ][ 2 ] = Bolt[4] / 8
+			BoltsFired[ idx ][ 3 ] = Bolt[5] / 8
+			IF Bolt[2] EQ PlayerPos[0] AND Bolt[3] EQ PlayerPos[1] THEN
+				SysPut( "B", 42 + Bolt[ 1 ] , false )
+				EnemyList[Bolt[0]][ 4 ] = 2
+				remove(BoltsFired, idx)
+				GotHit = true
+			ELSE IF scene[ Bolt[3] ][ Bolt[2] ] EQ "W" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "M" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "T" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "X" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "O" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "1" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "2" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "3" OR scene[ Bolt[3] ][ Bolt[2] ] EQ "4" THEN
+				SysPut( "B", 42 + Bolt[ 1 ] , false )
+				EnemyList[Bolt[0]][ 4 ] = 2
+				remove(BoltsFired, idx)
+			OK OK
+			UpdateSprite = true
+		DONE
+		logListOfList(BoltsFired,"BoltsFired")
+	OK
+			
+	IF UpdatePixel THEN
+		DrawPixels()
+	OK
+	IF UpdateGrid THEN
+		DrawGrid()
+		UpdateGrid = false
+	OK
+	IF UpdateSprite OR ( UpdateSword GT 0 AND UpdateSword LTE 3 )  OR UpdateAttack GT 0 THEN
+		IF UpdateSword EQ 1 or UpdateSword EQ 2 THEN
+		UpdateSword = UpdateSword + 1
+		ELSE IF UpdateSword EQ 3 THEN
+			SysPut( "B", 42 + SwordSpriteNum, false )
+			UpdateSword = 4
+		OK OK
+		IF UpdateAttack GT 0 AND UpdateAttack LT 3 THEN
+			UpdateAttack = UpdateAttack + 1
+		ELSE IF UpdateAttack EQ 3 THEN
+			SysPut( "B", 42 + AttackSpritenum, false )
+			UpdateAttack = 0
+		OK OK
+		DrawSprites()
+		UpdateSprite = false
+	OK
+	IF UpdateSword GTE 4 AND UpdateSword LTE 8 THEN
+		UpdateSword = UpdateSword + 1
+	ELSE IF UpdateSword EQ 9 THEN
+		UpdateSword = 0
+	OK OK
+	IF UpdateLegend THEN
+		DrawLegend()
+		UpdateLegend = false
+	OK
+	sync()
+	IF UpdatePixel THEN
+		wait( .1 )
+		UpdatePixel = false
+		ClearPixels()
+	OK
+	IF Ch2Cnt GT 0 THEN
+		IF Ch2Cnt EQ 1 THEN
+			Ch2Cnt = 2
+		ELSE
+			Ch2Cnt = 0
+			Ch2Sound = 0
+			Gate( 2,false )
+		OK
+	OK
+RESULT nothing
+
+# Checks hits on player, enemy and boss. 
+# Calculates Lives
+FUNCTION GotHitCheck()
+	EnemyCheckAttack()
+	IF EnemyHit THEN
+		EnemyHit = false
+	OK
+	IF BossHit THEN
+		
+		Bosslives = Bosslives - 1
+		BossHit = false
+		IF Bosslives EQ 0 THEN
+			BossActive = false
+			sysput( "B", 42 + BossSprite1, false )
+			sysput( "B", 42 + FireSprite_Boss, false )
+			sysput( "B", 42 + PowerSprite, true )
+			powerready = 1
+			UpdateScene()
+			UpdateGrid = true
+		ELSE
+		ImportSpriteData2(BossSprite2,BossSprite1)
+		BossSprite2=BossSprite3
+		CurrentBossSprite = CurrentBossSprite + 1
+		OK
+	OK
+		IF GotHit THEN
+		PlayerHitSound()
+		IF NOT PlayerInvincible THEN
+			PlayerLives = PlayerLives - 1
+			SysPut( "B", 42 + HeartSprite1 + PlayerLives, false )
+		OK
+		GotHit = false
+		IF PlayerLives EQ 0 THEN
+			error( "GameOver" )
+		OK
+	OK
+RESULT nothing 
+
+FUNCTION StartMessage()
+	Cls()
+	cleargrid()
+	clearsprites()
+	LockKB()
+	writeln("ArrowKeys move the player","")
+	writeln("WASD attacks","")
+	writeln("Space is Power if you've collected it","")
+	writeln("Power Destroys Enemy and Red Block","")
+	writeln("Can move grey block if you have Gloves","")
+	writeln("Defeat all enemies to open brown doors","")
+	writeln("Collect all keys to open black door","")
+	writeln("Debug Options avaliable","")
+	writeln("Press Any Key To Continue")
+	WHILE KeyDown() EQ "" REPEAT
+	DONE
+RESULT nothing
+
+
+
+# Checks if position ValidMove_MovePos is an open space
+# Input:
+#		ValidMove_MovePos - list of move coordinates
+# Output:
+#		"0" If free space
+#		"1" If Wall or hostile
+#		"2" If collectable
+#		RoomName If regular doo with no hazards or boss door and all keys
+#		ELSE "1"
+FUNCTION ValidMove(list ValidMove_MovePos)
+	SET string ValidMove_MapTile = Scene[ ValidMove_MovePos[ 1 ] ][ ValidMove_MovePos[ 0 ] ]
+	SET boolean IsCollission = CheckCollisionPlayer( ValidMove_MovePos[ 0 ], ValidMove_MovePos[ 1 ] )
+	SET list IsCollectable = PosCheckIn( ValidMove_MovePos,  Collectables )
+	IF ValidMove_MapTile EQ "F" AND NOT IsCollission OR ValidMove_MapTile EQ "B" THEN
+		IF IsCollectable[ 0 ] THEN
+			OnIce = "0"
+			OUTPUT [ "2", collectables[ IsCollectable[ 1 ] ][2] ]
+		ELSE IF BossActive THEN
+			IF NOT CheckSpriteCollision( ValidMove_MovePos[ 0 ] * 8, ValidMove_MovePos[ 1 ] * 8) THEN
+				OnIce = "0"
+				OUTPUT [ "0", "0" ]
+			ELSE
+				OnIce = "0"
+				OUTPUT [ "1", "0" ]
+			OK
+		ELSE
+			OnIce = "0"
+			OUTPUT [ "0", "0" ]
+		OK OK
+	ELSE IF ValidMove_MapTile EQ "W" OR ValidMove_MapTile EQ "T" THEN
+		OnIce = "0"
+		OUTPUT [ "1", "0" ]
+	ELSE IF ValidMove_MapTile EQ "M" AND OnIce EQ "0" THEN
+		IF PushPowerActive THEN
+			OnIce = "0"
+			OUTPUT [ "3", "0" ]
+		ELSE
+			OnIce = "0"
+			OUTPUT [ "1", "0" ]
+		OK
+	ELSE IF ValidMove_MapTile EQ "O" AND NOT BossActive OR ValidMove_MapTile EQ "X" AND NumKeysCollected GTE 4 AND NumHazards EQ 0 OR ( ValidMove_MapTile EQ "1" OR ValidMove_MapTile EQ "2" OR ValidMove_MapTile EQ "3" OR ValidMove_MapTile EQ "4" ) AND NumHazards EQ 0 AND ButtonOnMapcheck() THEN
+		SET list ValidMove_ExitKeys = GetKeys( RoomData["exits"] )
+		EACH ValidMove_ExitKey IN ValidMove_ExitKeys REPEAT
+			IF ValidMove_MapTile EQ ValidMove_ExitKey THEN
+				OnIce = "0"
+				OUTPUT [ "4", RoomData["exits"][ValidMove_ExitKey] ]
+			OK
+		DONE
+	ELSE IF ValidMove_MapTile EQ "I" THEN
+		OnIce = PlayerDir
+		IF IsCollectable[ 0 ] THEN
+			OUTPUT [ "5", collectables[ IsCollectable[ 1 ] ][2] ]
+		ELSE
+			OUTPUT [ "5", "0" ]
+		OK
+	ELSE
+		OnIce = "0"
+		OUTPUT [ "1", "0" ]
+	OK OK OK OK OK
+RESULT list
+
+FUNCTION str_2_words( string str )
+	SET list tmp = tolist( str )
+	SET list word_list = [ "" ]
+	READY number cnt
+	EACH letter IN tmp REPEAT
+		IF letter NEQ " " THEN
+			word_list[ cnt ] = word_list[ cnt ] + letter
+		ELSE
+			append( word_list, "" )
+			cnt = cnt + 1
+		OK
+	DONE
+	READY list word_list1
+	READY number i
+	WHILE i LT size( word_list ) - 1 REPEAT
+		append( word_list1, [ word_list[ i ], word_list[ i+1 ] ] )
+		i = i + 2
+	DONE
+	OUTPUT word_list1
+RESULT list 
+
+# Converts a list to a string
+# Input:
+#		list_Input - list of strings
+# Output:
+#		String_Output - String of list_Input
+FUNCTION List2Str( list list_Input , string Input_Type)
+	READY string String_Output
+	IF Input_Type EQ "int" THEN
+		EACH Char_tmp IN list_Input REPEAT
+			String_Output = String_Output + tostr(Char_tmp)
+		DONE
+	ELSE IF Input_Type EQ "str" THEN
+		EACH Char_tmp IN list_Input REPEAT
+			String_Output = String_Output + Char_tmp
+		DONE
+	OK OK
+	OUTPUT String_Output
+RESULT string
+
+FUNCTION ListOfList2StrForLog( list ListOfList2StrForLog_Input )
+	READY list ListOfList2StrForLog_Output
+	WHILE Size(ListOfList2StrForLog_Input) GT 0 REPEAT
+		Append(ListOfList2StrForLog_Output, List2StrForLog( Shift( ListOfList2StrForLog_Input ) ) )
+	DONE	
+	OUTPUT ListOfList2StrForLog_Output
+RESULT list
+
+FUNCTION List2StrForLog( list List2StrForLog_Input )
+	SET string List2StrForLog_Output = "[ "
+	WHILE Size(List2StrForLog_Input) GT 0 REPEAT
+		IF Type(List2StrForLog_Input[ 0 ] ) EQ "Number" THEN
+			List2StrForLog_Output = List2StrForLog_Output + ToStr( Shift( List2StrForLog_Input ) )
+			IF Size(List2StrForLog_Input) NEQ 0 THEN
+				List2StrForLog_Output = List2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(List2StrForLog_Input[ 0 ] ) EQ "String" THEN
+			List2StrForLog_Output = List2StrForLog_Output + "'" + Shift( List2StrForLog_Input ) + "'"
+			IF Size(List2StrForLog_Input) NEQ 0 THEN
+				List2StrForLog_Output = List2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(List2StrForLog_Input[ 0 ] ) EQ "Boolean" THEN
+			IF Shift(List2StrForLog_Input) THEN
+				List2StrForLog_Output = List2StrForLog_Output + "true"
+			ELSE
+				List2StrForLog_Output = List2StrForLog_Output + "false"
+			OK
+			IF Size(List2StrForLog_Input) NEQ 0 THEN
+				List2StrForLog_Output = List2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(List2StrForLog_Input[ 0 ] ) EQ "List" THEN
+			List2StrForLog_Output = List2StrForLog_Output + List2StrForLog( Shift( List2StrForLog_Input ) )
+			IF Size(List2StrForLog_Input) NEQ 0 THEN
+				List2StrForLog_Output = List2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(List2StrForLog_Input[ 0 ] ) EQ "Map" THEN
+			List2StrForLog_Output = List2StrForLog_Output + Map2StrForLog( Shift( List2StrForLog_Input ) )
+			IF Size(List2StrForLog_Input) NEQ 0 THEN
+				List2StrForLog_Output = List2StrForLog_Output + ",  "
+			OK
+		OK OK OK OK OK
+	DONE
+	List2StrForLog_Output = List2StrForLog_Output + " ]"
+	OUTPUT List2StrForLog_Output
+RESULT string
+
+FUNCTION Map2StrForLog( map Map2StrForLog_Input )
+	SET string Map2StrForLog_Output = "{ "
+	SET list Map2StrForLog_Keys = GetKeys( Map2StrForLog_Input )
+	WHILE Size(Map2StrForLog_Keys) GT 0 REPEAT
+		SET string Map2StrForLog_Key = Shift( Map2StrForLog_Keys )
+		Map2StrForLog_Output = Map2StrForLog_Output + "'" + Map2StrForLog_Key + "': "
+		IF Type(Map2StrForLog_Input[Map2StrForLog_Key] ) EQ "Number" THEN
+			Map2StrForLog_Output = Map2StrForLog_Output + ToStr( Map2StrForLog_Input[Map2StrForLog_Key]  )
+			IF Size(Map2StrForLog_Keys) NEQ 0 THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(Map2StrForLog_Input[Map2StrForLog_Key] ) EQ "String" THEN
+			Map2StrForLog_Output = Map2StrForLog_Output + "'" + Map2StrForLog_Input[Map2StrForLog_Key] + "'"
+			IF Size(Map2StrForLog_Keys) NEQ 0 THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(Map2StrForLog_Input[Map2StrForLog_Key] ) EQ "Boolean" THEN
+			IF Shift(Map2StrForLog_Keys) THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + "true"
+			ELSE
+				Map2StrForLog_Output = Map2StrForLog_Output + "false"
+			OK
+			IF Size(Map2StrForLog_Keys) NEQ 0 THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(Map2StrForLog_Input[Map2StrForLog_Key] ) EQ "List" THEN
+			Map2StrForLog_Output = Map2StrForLog_Output + List2StrForLog( Map2StrForLog_Input[Map2StrForLog_Key] )
+			IF Size(Map2StrForLog_Keys) NEQ 0 THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + ", "
+			OK
+		ELSE IF Type(Map2StrForLog_Input[Map2StrForLog_Key] ) EQ "Map" THEN
+			Map2StrForLog_Output = Map2StrForLog_Output + Map2StrForLog( Map2StrForLog_Input[Map2StrForLog_Key] )
+			IF Size(Map2StrForLog_Keys) NEQ 0 THEN
+				Map2StrForLog_Output = Map2StrForLog_Output + ", "
+			OK
+		OK OK OK OK OK
+	DONE
+	Map2StrForLog_Output = Map2StrForLog_Output + " }"
+	OUTPUT Map2StrForLog_Output
+RESULT string
+
+# Checks if string is in a list
+# Input:
+#		list_Input - list of strings
+#		String_Input - String to search
+# Output:
+#		true if String_Input is in list_Input ELSE false
+FUNCTION CheckIn( string String_Input, list List_Input )
+	EACH Char_Tmp IN List_Input REPEAT
+		IF Char_Tmp EQ String_Input THEN
+			OUTPUT true
+		OK
+	DONE
+	OUTPUT false
+RESULT boolean
+
+FUNCTION logString(string LogString_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		datawrite( "Log", "A", LogString_Input )
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+FUNCTION logNum(number LogNum_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		datawrite( "Log", "A", ToStr( LogNum_Input) )
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+FUNCTION logBool(boolean LogBool_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		IF LogBool_Input THEN
+			datawrite( "Log", "A", "true")
+		ELSE
+			datawrite( "Log", "A", "false")
+		OK
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+FUNCTION logList(list LogList_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		datawrite( "Log", "A", List2StrForLog( LogList_Input )  )
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+FUNCTION logListOfList(list LogList_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		datawrite( "Log", "A", "[" )
+		SET list LogListTmp = ListOfList2StrForLog( LogList_Input ) 
+		EACH item IN LogListTmp REPEAT
+			datawrite( "Log", "A", item )
+		DONE
+		datawrite( "Log", "A", "]" )
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+FUNCTION LogMap(map LogMap_Input, string InputName)
+	IF DebugMode THEN
+		datawrite( "Log", "A", InputName )
+		datawrite( "Log", "A", Map2StrForLog( LogMap_Input ) )
+		datawrite( "Log", "A", "" )
+	OK
+RESULT nothing
+
+# Checks if coordinates are in list of positions
+# Input:
+#		list_Input - list of integer coordinates [[x1,y1], [x2,y2] ... [xn,yn]]
+#		Pos_Input - List containing integer coordinates [x,y]
+# Output:
+#		List containing true and index if found, ELSE false and 0
+FUNCTION PosCheckIn( list Pos_Input, list List_Input )
+	EACH idx, Pos_Tmp IN List_Input REPEAT
+		IF Pos_Tmp[ 0 ] EQ Pos_Input[ 0 ] AND Pos_Tmp[ 1 ] EQ Pos_Input[ 1 ] THEN
+			OUTPUT [ true, idx ]
+		OK
+	DONE
+	OUTPUT [ false, 0 ]
+RESULT list
+
+FUNCTION LineToList( string Line, string Seperator )
+	READY list LineToList_Output
+	READY string LineToList_tmp_String
+	EACH LineToList_tmp_Char IN ToList( line ) REPEAT
+		IF LineToList_tmp_Char NEQ Seperator THEN
+			LineToList_tmp_String = LineToList_tmp_String + LineToList_tmp_Char
+		ELSE
+			Append( LineToList_Output, LineToList_tmp_String )
+			READY string LineToList_tmp_String
+		OK
+	DONE
+	OUTPUT LineToList_Output
+RESULT list 

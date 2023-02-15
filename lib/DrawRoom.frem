@@ -1,0 +1,382 @@
+# W = imoveable wall
+# F = moveable floor
+# S = start location
+# E = end location
+# H = deadly hazard
+DEFINE _PATH_ software/Adventure
+DEFINE _lib_ _PATH_/lib
+DEFINE _rooms_ _PATH_/rooms
+DEFINE _player_ _PATH_/player
+DEFINE _Enemy_ _PATH_/Enemy
+
+
+# Loads the room into "Scene" and the grid. Loads room info variables
+# Input:
+#		LoadRoom_dataFile - Room Map
+# Output:
+#		Nothing. 
+FUNCTION LoadRoom(string LoadRoom_dataFile)
+	set list scentmp = dataread ( LoadRoom_dataFile )
+	EACH line in scentmp REPEAT
+		set list line2 = tolist(line)
+		append( scene, line2)
+		EACH x,v IN line2 REPEAT
+			LogPos( v, x, (size(scene) - 1 ))
+			DrawTile( v, x, (size(scene) - 1 ))
+		DONE
+	DONE
+RESULT nothing
+
+
+# Get color for grid tiles
+# Input:
+#		GetColor_RoomTile - Tile of map
+# Output:
+#		Map of GetColor_RoomTiles Color Params
+FUNCTION GetColor(string GetColor_RoomTile)
+	READY number red
+	READY number green
+	READY number blue
+	SET number alpha = 1
+	IF GetColor_RoomTile EQ "W" THEN
+		red = 70 green = 55 blue = 19
+	ELSE IF GetColor_RoomTile EQ "F" THEN
+		red = 115  green = red blue = red
+	ELSE IF GetColor_RoomTile EQ "B" THEN
+		red = 255  green = red blue = red
+	ELSE IF GetColor_RoomTile EQ "T" THEN
+		red = 103  green = 0 blue = 4
+	ELSE IF GetColor_RoomTile EQ "I" THEN
+		red = 130  green = 130 blue = 240
+	ELSE IF GetColor_RoomTile EQ "S" THEN
+		red = 0 green = 64 blue = 255
+	ELSE IF GetColor_RoomTile EQ "M" THEN
+		red = 56 green = 64 blue = 78
+	ELSE IF ( GetColor_RoomTile EQ "1" OR GetColor_RoomTile EQ "2" OR GetColor_RoomTile EQ "3" OR GetColor_RoomTile EQ "4" ) AND (NumHazards GT 0 or not ButtonOnMapCheck() ) THEN
+		red = 92 green = 55 blue = 19
+	ELSE IF ( GetColor_RoomTile EQ "1" OR GetColor_RoomTile EQ "2" OR GetColor_RoomTile EQ "3" OR GetColor_RoomTile EQ "4" ) AND (NumHazards eq 0 and  ButtonOnMapCheck() ) THEN
+		red = 100  green = red blue = red
+	ELSE IF GetColor_RoomTile EQ "X" AND( NumKeysCollected LT 4 or not ButtonOnMapCheck() )THEN
+		red = 32 green = 12 blue = 0	
+	ELSE IF GetColor_RoomTile EQ "X" AND NumKeysCollected EQ 4 AND NumHazards EQ 0 and  ButtonOnMapCheck() THEN
+		red = 100  green = red blue = red
+	ELSE IF GetColor_RoomTile EQ "O" AND BossLives GT 0 THEN
+		red = 32 green = 12 blue = 0	
+	ELSE IF GetColor_RoomTile EQ "O" AND BossLives EQ 0  THEN
+		red = 255 green = 255 blue = 255
+	OK OK OK OK OK OK OK OK OK OK OK OK OK
+	OUTPUT {
+		"r": red, "g": green, "b": blue,
+		"a": alpha
+	}
+RESULT map
+
+FUNCTION ButtonOnMapCheck()
+	SET number ButtonOnMapCheck_Count = 0
+	IF Size( ButtonOnMap ) GT 0 AND Size( PushableBlocks ) GT 0 THEN
+		EACH Button IN ButtonOnMap REPEAT
+			EACH Block IN PushableBlocks REPEAT
+				IF Block[2] EQ Button[0] AND Block[3] EQ Button[1] THEN
+					ButtonOnMapCheck_Count = ButtonOnMapCheck_Count + 1
+				OK
+			DONE
+		DONE
+		IF ButtonOnMapCheck_Count EQ Size( ButtonOnMap ) THEN
+			OUTPUT true
+		OK
+	ELSE IF Size( ButtonOnMap ) EQ 0 THEN
+		OUTPUT true
+	OK OK
+	OUTPUT false
+RESULT boolean
+
+# Draws text overlay
+FUNCTION DrawLegend()
+	Cls()
+	WriteLn(
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"")
+		IF PushPowerActive THEN
+			WRITELN("Power Gloves") OK
+		WRITELN(
+		" Keys: " + tostr( NumKeysCollected ) + "/4" # Number of keys
+	)
+	# Only displayed if player has power
+	IF PowerReady EQ 2 THEN
+		IF FirePlayerCounter EQ 0 THEN
+			WriteLN( "Energy: " + "100" )
+		ELSE IF FirePlayerCounter LTE 2 THEN
+			WriteLN( "Energy: " + "0" )
+		ELSE
+			WriteLN( "Energy: " + tostr( ceil( ( ( FirePlayerCounter - 2 ) / 9 ) * 100 ) ) )
+		OK OK
+	OK
+RESULT nothing
+
+# Draw color Grid square on screen
+# Input:
+#		DrawTile_RoomTile - Tile of map
+#		x - X coordinate of DrawTile_RoomTile
+#		y - Y coordinate of DrawTile_RoomTile
+# Output:
+#		Nothing
+FUNCTION DrawTile(string DrawTile_RoomTile, number x, number y)
+	SET map DrawTile_RoomTile_Map = GetColor( DrawTile_RoomTile )
+	Grid(
+		x, y,
+		DrawTile_RoomTile_Map["r"],
+		DrawTile_RoomTile_Map["g"],
+		DrawTile_RoomTile_Map["b"],
+		DrawTile_RoomTile_Map["a"]
+		)
+RESULT nothing
+
+#  Stores Tile data to variables
+# Input:
+#		LogPos_RoomTile - Tile of map
+#		x - X coordinate of DrawTile_RoomTile
+#		y - Y coordinate of DrawTile_RoomTile
+# Output:
+#		Nothing
+FUNCTION LogPos(string LogPos_RoomTile, number x, number y)
+	IF LogPos_RoomTile EQ "S" THEN
+		PlayerPos = [ x, y ]
+	ELSE IF LogPos_RoomTile EQ "W" THEN
+		append( Walls, [ x, y ] ) 
+	ELSE IF LogPos_RoomTile EQ "B" THEN
+		append( ButtonOnMap, [ x, y ] )  
+	ELSE IF LogPos_RoomTile EQ "M" THEN
+		append(PushableBlocks,[ x, y, x, y, false ] )
+	ELSE IF LogPos_RoomTile EQ "T" THEN
+		append( Tree, [ x, y ] ) 
+	ELSE IF LogPos_RoomTile EQ "X" OR LogPos_RoomTile EQ "O" OR LogPos_RoomTile EQ "1" OR LogPos_RoomTile EQ "2" OR LogPos_RoomTile EQ "3" OR LogPos_RoomTile EQ "4" THEN
+		Append( Collisions_DoorsAndWalls, [ x, y ] )
+	OK OK OK OK OK OK
+RESULT nothing
+
+# Updates the grid with all values in "Scene"
+FUNCTION UpdateScene()
+	EACH y,Xcoords IN Scene REPEAT
+		EACH x,v IN XCoords REPEAT
+			DrawTile( v, x, y )
+		DONE
+	DONE
+RESULT nothing
+
+#  Stores Tile location to Collisions
+# Input:
+#		x - X coordinate of collision
+#		y - Y coordinate of collision
+# Output:
+#		Nothing
+FUNCTION AddCollision(number x, number y)
+	Append( Collisions, [ x, y ] )
+RESULT nothing
+
+#  Stores Tile location to Collisions_DoorsAndWalls
+# Input:
+#		x - X coordinate of collision
+#		y - Y coordinate of collision
+# Output:
+#		Nothing
+FUNCTION AddCollision_DoorsAndWalls(number x, number y)
+	Append( Collisions_DoorsAndWalls, [ x, y ] )
+RESULT nothing
+
+#  Stores Enemy data to EnemyList
+# Input:
+#		Enemy_name - String of name of enemy
+#		SpriteSet_Number - Sprite set  of enemy
+#		x - X coordinate of enemy
+#		y - Y coordinate of enemy
+#		EnemyDir - String of direction enemy is facing
+# Output:
+#		Nothing
+FUNCTION AddEnemy(string Enemy_name, number SpriteSet_Number, number x, number y, string EnemyDir, string EnemyType)
+	Index( EnemyList, Enemy_name, [ x, y, SpriteSet_Number, EnemyDir, 0, 0, x * 8, y * 8 , x, y, EnemyDir, EnemyType] )
+	NumHazards = NumHazards + 1
+RESULT nothing
+
+#  Stores Tile location to Collectables
+# Input:
+#		x - X coordinate of collectable
+#		y - Y coordinate of collectable
+# Output:
+#		Nothing
+FUNCTION AddCollectable(number x, number y, string s)
+	Append( Collectables, [ x, y, s ] )
+	Append( Collisions_DoorsAndWalls, [ x, y ] )
+RESULT nothing
+
+#  Loads keys onto map
+# Input:
+#		Nothing. Works with RoomData
+# Output:
+#		Nothing
+FUNCTION LoadKeys()
+	IF RoomData["key"]["ON"] EQ "true"  THEN
+		SET list LoadKeys_LevelKeys = GetKeys( RoomData["key"] )
+		IF CheckIn( LoadKeys_LevelKeys[ 1 ], HaveKey ) EQ false THEN # Checks if key has been aquired
+			KeySprite = CurrentSprite
+			CurrentSprite = CurrentSprite + 1
+			LoadSpriteFromFile( "_rooms_/Key", KeySprite )
+			KeyPos = [ toint( RoomData["key"][LoadKeys_LevelKeys[ 1 ]][ 0 ] ), toint( RoomData["key"][LoadKeys_LevelKeys[ 1 ]][ 1 ] ) ]
+			spritePos( KeySprite, KeyPos[ 0 ] * 8, KeyPos[ 1 ] * 8 )
+			SysPut( "B", 42 + KeySprite, true )
+			UpdateSprite = true
+			AddCollectable( KeyPos[ 0 ],KeyPos[ 1 ],"Key" )
+		OK
+	OK
+RESULT nothing
+
+FUNCTION LoadOther()
+	IF RoomData["other"]["ON"] EQ "true"  THEN
+		SET list LoadOther_LevelKeys = GetKeys( RoomData["other"] )
+		EACH LoadOther_LevelKey IN LoadOther_LevelKeys REPEAT
+			IF PushPowerActive EQ false AND LoadOther_LevelKey EQ "powerglove" THEN 
+				PowerSprite = CurrentSprite
+				CurrentSprite = CurrentSprite + 1
+				LoadSpriteFromFile( "_player_/PowerGlove", PowerSprite )
+				PowerPos = [ toint( RoomData["other"][LoadOther_LevelKey][ 0 ] ), toint( RoomData["other"][LoadOther_LevelKey][ 1 ] ) ]
+				spritePos( PowerSprite, PowerPos[ 0 ] * 8, PowerPos[ 1 ] * 8 )
+				SysPut( "B", 42 + PowerSprite, true )
+				UpdateSprite = true
+				AddCollectable( PowerPos[ 0 ],PowerPos[ 1 ] , "Power")
+			OK
+		DONE
+	OK
+RESULT nothing
+
+#  Loads enemies onto map
+# Input:
+#		Nothing. Works with RoomData
+# Output:
+#		Nothing
+FUNCTION LoadEnemies()
+	IF RoomData["enemies"]["ON"] NEQ "false" THEN
+		SET list LoadEnemies_LevelEnemies = GetKeys( RoomData["enemies"] )
+		EACH LoadEnemies_LevelEnemy IN LoadEnemies_LevelEnemies REPEAT
+			IF CheckIn( LoadEnemies_LevelEnemy, EnemyDead ) EQ false AND LoadEnemies_LevelEnemy NEQ "ON"  THEN
+				SET list LoadEnemies_EnemyPos = [ toint( RoomData["enemies"][LoadEnemies_LevelEnemy][ 0 ] ), toint( RoomData["enemies"][LoadEnemies_LevelEnemy][ 1 ] ) ]
+				SET string LoadEnemies_EnemyDir = RoomData["enemies"][LoadEnemies_LevelEnemy][ 2 ]
+				logstring(LoadEnemies_EnemyDir, LoadEnemies_LevelEnemy)
+				IF RoomData["enemies"][LoadEnemies_LevelEnemy][ 3 ] EQ "Snake" THEN
+					IF LoadEnemies_EnemyDir EQ "D" THEN
+						ImportSpriteData2(EnemySpriteNS1, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "R" THEN
+						ImportSpriteData2(EnemySpriteEW1, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "U" THEN
+						ImportSpriteData2(EnemySpriteNS1, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, -1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "L" THEN
+						ImportSpriteData2(EnemySpriteEW1, CurrentSprite )	
+						spriteflip( CurrentSprite, -1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					OK OK OK OK
+				ELSE IF RoomData["enemies"][LoadEnemies_LevelEnemy][ 3 ] EQ "Bow" THEN
+					IF LoadEnemies_EnemyDir EQ "D" THEN
+						ImportSpriteData2(BowSpriteNS, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "R" THEN
+						ImportSpriteData2(BowSpriteEW, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "U" THEN
+						ImportSpriteData2(BowSpriteNS, CurrentSprite )	
+						spriteflip( CurrentSprite, 1, -1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					ELSE IF LoadEnemies_EnemyDir EQ "L" THEN
+						ImportSpriteData2(BowSpriteEW, CurrentSprite )	
+						spriteflip( CurrentSprite, -1, 1 )
+						Sysput( "B", 42 + CurrentSprite , true )
+					OK OK OK OK 
+				OK OK
+				SpritePos( CurrentSprite, LoadEnemies_EnemyPos[ 0 ] * 8,  LoadEnemies_EnemyPos[ 1 ] * 8 )
+				UpdateSprite = true
+				AddEnemy( LoadEnemies_LevelEnemy, CurrentSprite, LoadEnemies_EnemyPos[ 0 ], LoadEnemies_EnemyPos[ 1 ], LoadEnemies_EnemyDir,  RoomData["enemies"][LoadEnemies_LevelEnemy][ 3 ] )
+				CurrentSprite = CurrentSprite + 1
+			OK
+		DONE
+	OK
+RESULT nothing
+
+# Loads "CurrentRoom" level onto grid and RoomData 
+FUNCTION LoadMap()	
+	CurrentRoomAddress = "_rooms_/" + CurrentRoom
+	CurrentRoomMap = CurrentRoomAddress + "/map"
+	RoomData = GetRoomData( CurrentRoomAddress )
+	LoadKeys()
+	LoadEnemies()
+	LoadOther()
+	IF CheckIn( CurrentRoom,RoomsBeen ) THEN
+		LoadRoom( CurrentRoomMap + "2" )
+	ELSE
+		LoadRoom( CurrentRoomMap )
+		append( RoomsBeen,CurrentRoom )
+	OK
+	IF CurrentRoom EQ "end" AND NOT BossActive THEN
+		CreateBoss()
+		BossActive = true
+	OK
+	IF Size( ButtonOnMap ) Gt 0 THEN
+		UpdateScene()
+	OK
+	LoadPlayer()
+	UpdateGrid = true
+	UpdateSprite = true
+RESULT nothing
+
+# Stores current scen into rooms tmp file "map2"
+# Used to remember dead enemies and collected keys
+FUNCTION StoreScene()
+	CurrentRoomAddress = "_rooms_/" + CurrentRoom
+	CurrentRoomMap = CurrentRoomAddress + "/map2"
+	IF Size( PushableBlocks ) GT 0 THEN
+		EACH Block IN PushableBlocks REPEAT
+			Scene[ Block[3] ][ Block[2]] = "F"
+			Scene[ Block[1] ][ Block[0]] = "M"
+		DONE
+	OK
+	IF Size( ButtonOnMap) GT 0 THEN
+		EACH b IN ButtonOnMap REPEAT
+			scene[ b[ 1 ] ][ b[ 0 ] ] = "B"
+		DONE
+	OK
+	SET list StoreScene_tmp_Scene = Scene
+	datawrite( CurrentRoomMap, "W", List2Str( shift( StoreScene_tmp_Scene ), "str" ) )
+	EACH StoreScene_tmp_Scene_Line IN StoreScene_tmp_Scene REPEAT
+		datawrite( CurrentRoomMap, "A", List2Str( StoreScene_tmp_Scene_Line, "str" )  )
+	DONE
+	datawrite( CurrentRoomMap, "A", "" )
+RESULT nothing
+
+
+
+
+
+

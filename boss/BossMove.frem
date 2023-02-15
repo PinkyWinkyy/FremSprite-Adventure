@@ -1,0 +1,113 @@
+DEFINE _PATH_ software/Adventure
+DEFINE _lib_ _PATH_/lib
+DEFINE _rooms_ _PATH_/rooms
+DEFINE _boss_ _PATH_/boss
+
+FUNCTION UpdateBossPos()
+	SpritePos(BossSprite1, BossPos_X, BossPos_Y)
+RESULT nothing
+
+FUNCTION UpdateFirePos()
+	IF FireBossCounter LT 21- 7*(CurrentBossSprite-BossSprite1) THEN
+		FireBossCounter = FireBossCounter + 1
+	ELSE IF FireBossCounter EQ 21- 7*(CurrentBossSprite-BossSprite1) THEN
+		FireBossPos_X = BossPos_X
+		FireBossPos_Y = BossPos_Y
+		FirePosDif_X = (PlayerPos_X/8 - FireBossPos_X/8 )
+		FirePosDif_Y = (PlayerPos_Y/8 - FireBossPos_Y/8)
+		SpritePos(FireSprite_Boss, FireBossPos_X, FireBossPos_Y)
+		SysPut("B", 42 + FireSprite_Boss, true)
+		FireBossCounter = FireBossCounter + 1
+		FireSound()
+	ELSE IF FireBossPos_Y + FirePosDif_Y GT 0 AND FireBossPos_Y + FirePosDif_Y LT 184 AND FireBossPos_X + FirePosDif_X GT 0 and FireBossPos_X + FirePosDif_X LT 304 AND FireBossCounter GT 21- 7*(CurrentBossSprite-BossSprite1) THEN
+		FireBossPos_Y = FireBossPos_Y + 20*(1+ (CurrentBossSprite-BossSprite1)*.5)*FirePosDif_Y/(abs(FirePosDif_X)+abs(FirePosDif_Y)+1)
+		FireBossPos_X = FireBossPos_X + 20*(1+ (CurrentBossSprite-BossSprite1)*.5)*FirePosDif_X/(abs(FirePosDif_X)+abs(FirePosDif_Y)+1)
+		SpritePos(FireSprite_Boss, FireBossPos_X, FireBossPos_Y)
+	ELSE
+		SysPut("B", 42 + FireSprite_Boss, false)
+		FireBossPos_X = BossPos_X
+		FireBossPos_Y = BossPos_Y
+		SpritePos(FireSprite_Boss, FireBossPos_X, FireBossPos_Y)
+		FireBossCounter = 0
+	OK OK OK
+	CheckFire()
+RESULT nothing
+
+FUNCTION CheckFire()
+	IF GotHit EQ false and PlayerPos_X/8 GTE FireBossPos_X/8 AND PlayerPos_X/8 LTE FireBossPos_X/8 + 2 AND PlayerPos_Y/8 GTE FireBossPos_Y/8 AND PlayerPos_Y/8 LTE FireBossPos_Y/8 + 2 AND FireBossCounter GTE 21- 7*(CurrentBossSprite-BossSprite1) THEN
+		GotHit = true
+		SysPut("B", 42 + FireSprite_Boss, false)
+		FireBossPos_X = BossPos_X
+		FireBossPos_Y = BossPos_Y
+		SpritePos(FireSprite_Boss, FireBossPos_X, FireBossPos_Y)
+		FireBossCounter = 0
+	OK
+RESULT nothing
+
+FUNCTION CreateBoss()
+	BossSprite1 = CurrentSprite 
+	CurrentBossSprite = BossSprite1
+	CurrentSprite = CurrentSprite + 1
+	SysPut("B", 42 + BossSprite1, false)
+	LoadSpriteFromFile("_boss_/Boss1", BossSprite1)
+	SpriteScale(BossSprite1, 3, 3)
+	SysPut("B", 42 + BossSprite1, true)
+	BossSprite2 = LoadSpriteFromFileToList("_boss_/Boss2")
+	BossSprite3 = LoadSpriteFromFileToList("_boss_/Boss3")
+	FireSprite_Boss = CurrentSprite 
+	CurrentSprite = CurrentSprite + 1
+	SysPut("B", 42 + FireSprite_Boss, false)
+	LoadSpriteFromFile("_boss_/Fire", FireSprite_Boss)
+	SpriteScale(FireSprite_Boss, 2, 2)
+	PowerSprite = CurrentSprite 
+	CurrentSprite = CurrentSprite + 1
+	SysPut("B", 42 + PowerSprite, false)
+	LoadSpriteFromFile("_boss_/Power", PowerSprite)
+	SpritePos(PowerSprite, 96, 96)
+	BossPos_X = 80
+	BossPosDif_X = 4 * (random(0,2) - 1)
+	BossPos_Y= 40
+	BossPosDif_Y = 4 * (random(0,2) - 1)
+	BossDir = "L"
+	BossLives = 1
+	UpdateBossPos()
+	UpdateFirePos()
+RESULT nothing
+
+
+FUNCTION DoBoss()
+	UpdateSprite = true
+	IF BossPos_Y + BossPosDif_Y GT 8 and BossPos_Y + BossPosDif_Y LT 184 AND BossPos_X + BossPosDif_X GT 8 AND BossPos_X + BossPosDif_X LT 304  THEN
+		BossPos_X = BossPos_X + BossPosDif_X
+		BossPos_Y = BossPos_Y + BossPosDif_Y
+	else
+		IF BossPos_Y + BossPosDif_Y LTE 8 THEN
+			BossPosDif_Y = 4* (random(1,2) )
+		ELSE IF BossPos_Y + BossPosDif_Y GTE 184 THEN
+			BossPosDif_Y  = -4* (random(1,2) )
+		ELSE
+			BossPosDif_Y = 4 * (random(0,2) - 1)* (random(1,2) )
+		OK OK
+		IF BossPos_X + BossPosDif_X LTE 8 THEN
+			BossPosDif_X = 4* (random(1,2) )
+		ELSE IF BossPos_X + BossPosDif_X GTE 304 THEN
+			BossPosDif_X = -4* (random(1,2) )
+		ELSE
+			BossPosDif_X = 4 * (random(0,2) - 1)* (random(1,2) )
+		OK OK
+		WHILE BossPosDif_X EQ 0 AND BossPosDif_Y EQ 0 REPEAT
+			BossPosDif_X = 4 * (random(0,2) - 1)* (random(1,2) )
+			BossPosDif_Y = 4 * (random(0,2) - 1)* (random(1,2) )
+		DONE
+	OK
+	UpdateBossPos()
+	UpdateFirePos()
+RESULT nothing
+
+
+
+
+
+
+
+

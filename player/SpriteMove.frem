@@ -1,0 +1,403 @@
+DEFINE _PATH_ software/Adventure
+DEFINE _lib_ _PATH_/lib
+DEFINE _rooms_ _PATH_/rooms
+DEFINE _player_ _PATH_/player
+DEFINE _boss_ _PATH_/boss
+DEFINE _Enemy_ _PATH_/Enemy
+
+# Checks what to do for input player position
+# Input:
+#		SetPlayerPos_X - X coordinate of next move
+#		SetPlayerPos_Y - Y coordinate of next move
+# Output:
+#		Nothing. 
+FUNCTION SetPlayerPos(number SetPlayerPos_X, number SetPlayerPos_Y, list MovePostionVector)
+	SET list SetPlayerPos_ValidMove = ValidMove( [ SetPlayerPos_X / 8, SetPlayerPos_Y / 8 ] )
+	IF PowerReady EQ 1 THEN # If boss has been defeated
+		IF SetPlayerPos_X EQ 96 AND SetPlayerPos_Y EQ 96 THEN # If on the power
+			PowerReady = 2
+			PlayerLives = 3
+			SysPut( "B", 42 + HeartSprite1, true )
+			SysPut( "B", 42 + HeartSprite2, true )
+			SysPut( "B", 42 + HeartSprite3, true )
+			sysput( "B", 42 + PowerSprite, false )
+		OK
+	OK		
+	IF SetPlayerPos_ValidMove[ 0 ] EQ "0" OR SetPlayerPos_ValidMove[ 0 ] EQ "5" THEN # If not into wall or hazard or collectable
+		UpdateSprite = true
+		PlayerPos_X = SetPlayerPos_X
+		PlayerPos_Y = SetPlayerPos_Y
+		IF SetPlayerPos_ValidMove[ 0 ] EQ "5" AND SetPlayerPos_ValidMove[ 1 ] NEQ "0" THEN
+			RemoveCollectable( SetPlayerPos_X, SetPlayerPos_Y, SetPlayerPos_ValidMove[ 1 ] )
+		OK
+	ELSE IF SetPlayerPos_ValidMove[ 0 ] EQ "3" THEN # If not into wall or hazard or collectable
+		EACH i, Block IN PushableBlocks REPEAT
+			IF Block[2] EQ setPlayerPos_X/8 and Block[3] EQ setPlayerPos_y/8 THEN
+				IF scene[ block[3] + MovePostionVector[1] ][ block[2] + MovePostionVector[0] ] EQ "I" THEN
+					UpdateSprite = true
+					PlayerPos_X = SetPlayerPos_X
+					PlayerPos_Y = SetPlayerPos_Y
+					WHILE scene[ block[3] + MovePostionVector[1] ][ block[2] + MovePostionVector[0] ] EQ "I" AND NOT CheckCollisionBlock( block[2] + MovePostionVector[0] ,   block[3] + MovePostionVector[1]  ) REPEAT
+						Scene[ block[3] + MovePostionVector[1] ][ block[2] + MovePostionVector[0] ] = "M"
+						IF PushableBlocks[i][ 4 ] EQ true THEN
+							Scene[ block[3] ][ block[2] ] = "I"
+						ELSE
+							Scene[ block[3] ][ block[2] ] = "F"
+						OK
+						PushableBlocks[i] = [ block[0], block[1], block[2] + MovePostionVector[0] , block[3] + MovePostionVector[1] , true]
+						UpdateScene()
+						UpdateGrid = true
+						Update()
+					DONE
+					IF NOT CheckCollisionBlock( PushableBlocks[ i ][ 2 ] + MovePostionVector[0], PushableBlocks[ i ][ 3 ] + MovePostionVector[1] ) THEN
+						Scene[ block[3] + MovePostionVector[1] ][ block[2] + MovePostionVector[0] ] = "M"
+						Scene[ block[3] ][ block[2] ] = "I"
+						PushableBlocks[i] = [ block[0], block[1], block[2] + MovePostionVector[0] , block[3] + MovePostionVector[1] , false]
+						UpdateScene()
+						UpdateGrid = true
+						Update()
+					OK
+						
+				ELSE IF NOT CheckCollisionBlock( SetPlayerPos_X/8 + MovePostionVector[0], SetPlayerPos_Y/8 + MovePostionVector[1] ) THEN
+					SET list TmpBlock = [ Block[0], Block[1], SetPlayerPos_X/8 + MovePostionVector[0],  SetPlayerPos_Y/8 + MovePostionVector[1], false ]
+					PushableBlocks[ i ] = TmpBlock
+					IF PosCheckIn( [ setPlayerPos_X/8, setPlayerPos_y/8 ],  ButtonOnMap )[ 0 ] THEN
+						Scene[ SetPlayerPos_Y/8 ][ SetPlayerPos_X/8 ] = "B"
+					ELSE
+						Scene[ SetPlayerPos_Y/8 ][ SetPlayerPos_X/8 ] = "F"
+					OK
+					Scene[ SetPlayerPos_Y/8 + MovePostionVector[1] ][ SetPlayerPos_X/8 + MovePostionVector[0]] = "M"
+					UpdateSprite = true
+					PlayerPos_X = SetPlayerPos_X
+					PlayerPos_Y = SetPlayerPos_Y
+					UpdateScene()
+					UpdateGrid = true
+				OK OK
+			OK
+		DONE
+	ELSE IF SetPlayerPos_ValidMove[ 0 ] EQ "2" THEN # If onto collectable
+		#LogList(SetPlayerPos_ValidMove,"TEST")
+		PlayerPos_X = SetPlayerPos_X
+		PlayerPos_Y = SetPlayerPos_Y
+		RemoveCollectable( SetPlayerPos_X, SetPlayerPos_Y, SetPlayerPos_ValidMove[ 1 ] )
+	ELSE IF SetPlayerPos_ValidMove[ 0 ] EQ "4" THEN # If onto door that can be opened
+		BackgroundMusicOFF() # Stops Background music for room change
+		DoorSound()
+		StoreScene()
+		#LogListOfList(scene,"Scene")
+		CurrentRoom = SetPlayerPos_ValidMove[ 1 ]
+		Clear()
+		LoadMap()
+		PlayerPos_X = PlayerPos[ 0 ] * 8
+		PlayerPos_Y = PlayerPos[ 1 ] * 8
+		#CreatePlayer()
+		SpritePos( PlayerSpriteNum, PlayerPos_X, PlayerPos_Y )
+	OK OK OK OK
+RESULT nothIng
+
+FUNCTION MoveUp()
+	IF PlayerDir NEQ "U" THEN
+		PlayerDir = "U"
+		ImportSpriteData2(PlayerSpriteNS, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, 1, 1 )
+	OK
+	SetPlayerPos( PlayerPos[ 0 ] * 8, PlayerPos[ 1 ] * 8 - 8,[0,-1] )
+	UpdatePlayerPos()
+	UpdateSprite = true
+RESULT nothing
+
+FUNCTION MoveDown()
+	IF PlayerDir NEQ "D" THEN
+		PlayerDir = "D"
+		ImportSpriteData2(PlayerSpriteNS, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, 1, -1 )
+	OK
+	SetPlayerPos( PlayerPos[ 0 ] * 8, PlayerPos[ 1 ] * 8 + 8 ,[0,1])
+	UpdatePlayerPos()
+	UpdateSprite = true
+RESULT nothing
+
+FUNCTION MoveLeft()
+	IF PlayerDir NEQ "L" THEN
+		PlayerDir = "L"
+		ImportSpriteData2(PlayerSpriteEW, PlayerSpriteNum )1
+		spriteflip( PlayerSpriteNum, 1, 1 )
+	OK
+	SetPlayerPos( PlayerPos[ 0 ] * 8 - 8, PlayerPos[ 1 ] * 8,[-1,0] )
+	UpdatePlayerPos()
+	UpdateSprite = true
+RESULT nothing
+
+FUNCTION MoveRight()
+	IF PlayerDir NEQ "R" THEN
+		PlayerDir = "R"
+		ImportSpriteData2(PlayerSpriteEW, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, -1, 1 )
+	OK
+	SetPlayerPos( PlayerPos[ 0 ] * 8 + 8, PlayerPos[ 1 ] * 8 ,[1,0])
+	UpdatePlayerPos()
+	UpdateSprite = true
+RESULT nothing  
+
+
+FUNCTION UpdatePlayerPos()
+	SpritePos( PlayerSpriteNum, PlayerPos_X, PlayerPos_Y )
+	PlayerPos = [ PlayerPos_X / 8, PlayerPos_Y / 8 ]
+RESULT nothing
+
+FUNCTION Hearts()
+	PlayerLives = 3
+	LoadSpriteFromFile( "_player_/Heart", HeartSprite1 )
+	SysPut( "B", 42 + HeartSprite1, true )
+	SpritePos( HeartSprite1, 250, 0 )
+	LoadSpriteFromFile( "_player_/Heart",HeartSprite2 )
+	SysPut( "B", 42 + HeartSprite2, true )
+	SpritePos( HeartSprite2, 260, 0 )
+	LoadSpriteFromFile( "_player_/Heart",HeartSprite3 )
+	SysPut( "B", 42 + HeartSprite3, true )
+	SpritePos( HeartSprite3, 270, 0 )
+RESULT nothing
+
+FUNCTION CreatePlayer()
+	SysPut( "B", 42 + FireSprite_Player, false )
+	LoadSpriteFromFile( "_boss_/Fire", FireSprite_Player )
+	PlayerSpriteNS = LoadSpriteFromFileToList( "_player_/Player")
+	SysPut( "B", 42 + PlayerSpriteNum, true )
+	EACH y IN Range(0, 7) REPEAT
+		EACH x IN Range(0, 7) REPEAT
+			append(PlayerSpriteEW,  [x,y,PlayerSpriteNS[y+x*8][2],PlayerSpriteNS[y+x*8][3] ,PlayerSpriteNS[y+x*8][4] ,PlayerSpriteNS[y+x*8][5] ] )
+		DONE 
+	DONE
+	ImportSpriteData2(PlayerSpriteEW, PlayerSpriteNum )
+	spriteflip( PlayerSpriteNum, -1, 1 )
+	SysPut( "B", 42 + SwordSpriteNum, false )
+	SwordSpriteNS=LoadSpriteFromFileToList( "_player_/Sword" )
+	SwordSpriteEW=LoadSpriteFromFileToList( "_player_/Sword2" )
+	PlayerPos_X = PlayerPos[ 0 ] * 8
+	PlayerPos_Y= PlayerPos[ 1 ] * 8
+	UpdatePlayerPos()
+RESULT nothing
+
+FUNCTION LoadPlayer()
+	PlayerPos = [ toint( RoomData["pos"][PlayerDir][ 0 ] ), toint( RoomData["pos"][PlayerDir][ 1 ] ) ]
+	#logstring(playerdir,"playerdir")
+	IF PlayerDir EQ "L" THEN
+		ImportSpriteData2(PlayerSpriteEW, PlayerSpriteNum )1
+		spriteflip( PlayerSpriteNum, 1, 1 )
+	ELSE	IF PlayerDir EQ "R" THEN
+		ImportSpriteData2(PlayerSpriteEW, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, -1, 1 )
+	ELSE IF PlayerDir EQ "D" THEN
+		ImportSpriteData2(PlayerSpriteNS, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, 1, -1 )
+	ELSE IF PlayerDir EQ "U" THEN
+		ImportSpriteData2(PlayerSpriteNS, PlayerSpriteNum )
+		spriteflip( PlayerSpriteNum, 1, 1 )
+	OK OK OK OK
+	SysPut( "B", 42 + PlayerSpriteNum, true )
+RESULT nothing
+
+FUNCTION CheckCollisionPlayer( number x, number y )
+	IF scene[ y ][ x ] EQ "W" OR scene[ y ][ x ] EQ "T" THEN
+		OUTPUT true
+	OK
+	
+	IF NumHazards GT 0 THEN
+		SET list EnemiesKeys = GetKeys(EnemyList)
+		EACH EnemiesKey IN EnemiesKeys REPEAT
+			IF EnemyList[EnemiesKey][1] EQ y AND EnemyList[EnemiesKey][0] EQ x THEN
+				OUTPUT true
+			OK
+			IF EnemyList[EnemiesKey][9] EQ y AND EnemyList[EnemiesKey][8] EQ x THEN
+				OUTPUT true
+			OK
+		DONE
+	OK
+	OUTPUT false
+RESULT boolean
+
+FUNCTION CheckCollisionBlock( number x, number y )
+	IF scene[ y ][ x ] EQ "W" OR scene[ y ][ x ] EQ "M" OR scene[ y ][ x ] EQ "T" OR scene[ y ][ x ] EQ "X" OR scene[ y ][ x ] EQ "O" OR scene[ y ][ x ] EQ "1" OR scene[ y ][ x ] EQ "2" OR scene[ y ][ x ] EQ "3" OR scene[ y ][ x ] EQ "4" THEN
+		OUTPUT true
+	OK
+	
+	if size(Collectables) GT 0 THEN	
+		EACH c IN Collectables REPEAT
+			IF c[ 0 ] EQ x AND c[ 1 ]  EQ y THEN
+				OUTPUT true
+			OK
+		DONE
+	OK
+	
+	IF NumHazards GT 0 THEN
+		SET list EnemiesKeys = GetKeys(EnemyList)
+		EACH EnemiesKey IN EnemiesKeys REPEAT
+			IF EnemyList[EnemiesKey][1] EQ y AND EnemyList[EnemiesKey][0] EQ x THEN
+				OUTPUT true
+			OK
+			IF EnemyList[EnemiesKey][9] EQ y AND EnemyList[EnemiesKey][8] EQ x THEN
+				OUTPUT true
+			OK
+		DONE
+	OK
+	OUTPUT false
+RESULT boolean
+
+FUNCTION CheckCollisionEnemy( number x, number y, string SpriteName )
+	IF scene[ y ][ x ] EQ "W" OR scene[ y ][ x ] EQ "M" OR scene[ y ][ x ] EQ "T" OR scene[ y ][ x ] EQ "X" OR scene[ y ][ x ] EQ "O" OR scene[ y ][ x ] EQ "1" OR scene[ y ][ x ] EQ "2" OR scene[ y ][ x ] EQ "3" OR scene[ y ][ x ] EQ "4" THEN
+		OUTPUT [ true, 0 ]
+	OK
+
+	if size(Collectables) GT 0 THEN	
+		EACH c IN Collectables REPEAT
+			IF c[ 0 ] EQ x AND c[ 1 ]  EQ y THEN
+				OUTPUT [ true, 1 ]
+			OK
+		DONE
+	OK
+	
+	# IF NumHazards GT 0 THEN
+		# SET list EnemiesKeys = GetKeys(EnemyList)
+		# EACH EnemiesKey IN EnemiesKeys REPEAT
+			# IF EnemyList[EnemiesKey][1] EQ y AND EnemyList[EnemiesKey][0] EQ x AND SpriteName NEQ EnemiesKey THEN
+				# OUTPUT [ true, 0 ]
+			# OK
+			# IF EnemyList[EnemiesKey][9] EQ y AND EnemyList[EnemiesKey][8] EQ x AND SpriteName NEQ EnemiesKey THEN
+				# OUTPUT true
+			# OK
+		# DONE
+	# OK
+	OUTPUT [ false, 0 ]
+RESULT list
+
+FUNCTION CheckCollisionEnemy2( number x, number y)
+	OUTPUT [ 
+	scene[ y ][ x+1 ] EQ "W" OR scene[ y ][ x+1  ] EQ "M" OR scene[ y ][ x+1  ] EQ "T" OR scene[ y ][ x+1  ] EQ "X" OR scene[ y ][ x+1  ] EQ "O" OR scene[ y ][ x+1  ] EQ "1" OR scene[ y ][ x+1  ] EQ "2" OR scene[ y ][ x+1  ] EQ "3" OR scene[ y ][ x+1  ] EQ "4" ,
+	scene[ y ][ x-1 ] EQ "W" OR scene[ y ][ x-1  ] EQ "M" OR scene[ y ][ x-1  ] EQ "T" OR scene[ y ][ x-1  ] EQ "X" OR scene[ y ][ x-1  ] EQ "O" OR scene[ y ][ x-1  ] EQ "1" OR scene[ y ][ x-1  ] EQ "2" OR scene[ y ][ x-1  ] EQ "3" OR scene[ y ][ x-1  ] EQ "4" ,
+	scene[ y +1][ x  ] EQ "W" OR scene[ y +1][ x  ] EQ "M" OR scene[ y +1][ x  ] EQ "T" OR scene[ y +1][ x  ]  EQ "X" OR scene[ y +1][ x  ] EQ "O" OR scene[ y +1][ x  ] EQ "1" OR scene[ y +1][ x  ]  EQ "2" OR scene[ y +1][ x  ]  EQ "3" OR scene[ y +1][ x  ] EQ "4" ,
+	scene[ y -1][ x  ] EQ "W" OR scene[ y -1][ x  ] EQ "M" OR scene[ y -1][ x  ] EQ "T" OR scene[ y -1][ x  ]  EQ "X" OR scene[ y -1][ x  ] EQ "O" OR scene[ y -1][ x  ] EQ "1" OR scene[ y -1][ x  ]  EQ "2" OR scene[ y -1][ x  ]  EQ "3" OR scene[ y -1][ x  ] EQ "4" 
+	]
+RESULT list
+
+FUNCTION CheckCollisionWithDoors( number x, number y )
+	EACH c IN Walls REPEAT
+		IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+			OUTPUT true
+		OK
+	DONE
+	EACH c IN Collisions_DoorsAndWalls REPEAT
+		IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+			OUTPUT true
+		OK
+	DONE
+	OUTPUT false
+RESULT boolean
+
+FUNCTION CheckSpriteCollision( number xp, number yp )
+	IF xp/8 GTE BossPos_X/8  AND xp/8  LTE BossPos_X/8  + 4 THEN
+		IF yp/8  GTE BossPos_Y/8  AND yp/8  LTE BossPos_Y/8 + 4 THEN
+			OUTPUT true
+		ELSE
+			OUTPUT false
+		OK
+	ELSE
+		OUTPUT false
+	OK
+RESULT boolean
+
+FUNCTION CheckCollision2_Remove( number x, number y, string s )
+	set list l = envget(s) 
+	EACH i, c IN l REPEAT
+		IF c[ 0 ] EQ x AND c[ 1 ] EQ y THEN
+			remove( l, i )
+			envput(s,l)
+			OUTPUT true
+		OK
+	DONE
+	OUTPUT false
+RESULT boolean
+
+FUNCTION Check_Remove( number x, number y, list l )
+	EACH i, c IN l REPEAT
+		IF c[ 0 ] EQ x AND c[ 1 ] EQ y THEN
+			remove( l, i )
+		OK
+	DONE
+RESULT nothing
+
+
+FUNCTION RemoveCollectable( number x, number y, string s )
+	IF s EQ "Key" THEN
+		KeySound()
+		UpdatePlayerPos()
+		SET list mapkeys = GetKeys( RoomData["key"] )
+		append( HaveKey,mapkeys[ 1 ] )
+		sysput( "B",42 + KeySprite, false )
+		set list tmpg = collectables
+		EACH i, c IN tmpg REPEAT
+			IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+				remove( Collectables, i )
+			OK
+		DONE
+		set list tmpg = Collisions_DoorsAndWalls
+		EACH i, c IN tmpg REPEAT
+			IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+				remove( Collisions_DoorsAndWalls, i )
+			OK
+		DONE
+		NumKeysCollected = NumKeysCollected + 1
+		UpdateLegend = true
+		IF NumKeysCollected EQ 4 THEN
+			UpdateScene()
+			UpdateGrid = true
+		OK
+	ELSE IF s EQ "Power" THEN
+		BackgroundMusicOFF()
+		powergloveSound()
+		UpdatePlayerPos()
+		PushPowerActive = true
+		sysput( "B",42 + PowerSprite, false )
+		set list tmpg = collectables
+		EACH i, c IN tmpg REPEAT
+			IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+				remove( Collectables, i )
+			OK
+		DONE
+		set list tmpg = Collisions_DoorsAndWalls
+		EACH i, c IN tmpg REPEAT
+			IF c[ 0 ] * 8 EQ x AND c[ 1 ] * 8 EQ y THEN
+				remove( Collisions_DoorsAndWalls, i )
+			OK
+		DONE
+	OK OK
+RESULT nothing
+
+FUNCTION DoMovements()
+	SET string next_move = GetInput( MoveKeys )
+	IF next_move NEQ "" THEN
+	#logstring(next_move,"next_move")
+	#logstring(playerdir,"playerdir")
+	OK
+	IF OnIce NEQ "0" THEN
+		next_move = OnIce + "K"
+	OK
+	IF next_move EQ "UP" OR next_move EQ "UK" THEN
+		MoveUp()
+	ELSE IF next_move EQ "DOWN" OR next_move EQ "DK" THEN
+		MoveDown()
+	ELSE IF next_move EQ "LEFT" OR next_move EQ "LK" THEN
+		MoveLeft()
+	ELSE IF next_move EQ "RIGHT" OR next_move EQ "RK" THEN
+		MoveRight()
+	ELSE IF UpdateSword EQ 0 AND ( next_move EQ "W" OR next_move EQ "S" OR next_move EQ "A" OR next_move EQ "D" OR next_move EQ "SPACE" ) THEN
+		Action( next_move )
+	OK OK OK OK OK
+RESULT nothing
+
+
+
+
+
+
+
+

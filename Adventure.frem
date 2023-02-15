@@ -1,0 +1,75 @@
+DEFINE _PATH_ software/Adventure
+DEFINE _lib_ _PATH_/lib
+DEFINE _rooms_ _PATH_/rooms
+DEFINE _player_ _PATH_/player
+DEFINE _boss_ _PATH_/boss
+DEFINE _Enemy_ _PATH_/Enemy
+
+
+
+
+INCLUDE "_lib_/DrawRoom"
+INCLUDE "_lib_/Input"
+INCLUDE "_lib_/GridMove"
+INCLUDE "_lib_/util"
+INCLUDE "_lib_/DataGet"
+INCLUDE "_lib_/Sound"
+INCLUDE "_player_/SpriteMove"
+INCLUDE "_player_/Sword"
+INCLUDE "_boss_/BossMove"
+INCLUDE "_Enemy_/EnemyAttack"
+
+#powergloveSound()
+datawrite("Log", "W", "")
+SET boolean DebugMode = true
+
+# A boolean to control whether you get a map failure or not 
+# Adventure/Enemy/EnemyAttack.frem line: 158
+SET boolean Work_Debug = false
+
+SetUp()
+StartMessage()
+
+IF DebugMode THEN
+	NumKeysCollected = 3
+	PowerReady = 2 # 0 OFF 2 ON
+	PushPowerActive = true
+	PlayerInvincible = true
+OK
+EnemySpriteNS1 = LoadSpriteFromFileToList("_Enemy_/Enemy")
+EnemySpriteNS2 = LoadSpriteFromFileToList("_Enemy_/Enemy3")
+
+EnemySpriteEW1 = LoadSpriteFromFileToList("_Enemy_/Enemy2")
+EnemySpriteEW2 = LoadSpriteFromFileToList("_Enemy_/Enemy4")
+
+SET list BowSpriteNS = LoadSpriteFromFileToList("_Enemy_/Bow")
+READY list BowSpriteEW
+EACH y IN Range(0, 7) REPEAT
+	EACH x IN Range(0, 7) REPEAT
+		append(BowSpriteEW,  [ x,y,BowSpriteNS[ y+x*8 ][2],BowSpriteNS[ y+x*8 ][3] ,BowSpriteNS[ y+x*8 ][4] ,BowSpriteNS[ y+x*8 ][5] ] )
+	DONE 
+DONE
+SET list BoltSpriteNS = LoadSpriteFromFileToList("_Enemy_/Bolt")
+READY list BoltSpriteEW
+EACH y IN Range(0, 7) REPEAT
+	EACH x IN Range(0, 7) REPEAT
+		append(BoltSpriteEW,  [ x,y,BoltSpriteNS[ y+x*8 ][2],BoltSpriteNS[ y+x*8 ][3] ,BoltSpriteNS[ y+x*8 ][4] ,BoltSpriteNS[ y+x*8 ][5] ] )
+	DONE 
+DONE
+LoadMap()
+CreatePlayer()
+LoadAttacks()
+Hearts()
+Update()
+
+
+WHILE true REPEAT
+	BackgroundMusicON()
+	IF BossActive THEN
+		DoBoss()
+	OK
+	
+	DoMovements()
+	Update()
+	GotHitCheck()
+DONE

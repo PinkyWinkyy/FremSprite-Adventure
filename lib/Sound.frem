@@ -1,0 +1,163 @@
+# Creates Simple Tone 
+# Input:
+#		ch - channel
+#		shape - shape
+#		octave - octave
+#		note_in - note
+# Output:
+#		Nothing. 
+FUNCTION Simple_Note(number ch, number shape, number octave, number note_in )
+	Tone(
+		ch,
+		shape,#shape,
+		octave,#octave,
+		note_in,#note,
+		0,#attack,
+		0,#decay,
+		1,#sustain,
+		.2#release
+		)
+RESULT nothing
+
+# Note operators to change sound
+SET number Note_0_1 = 9
+SET number Note_0_2 = 7
+SET number Note_1_1 = 2
+SET number Note_1_2 = 4
+
+# Opening a gate triggers
+# the playing of audio on a
+# channel.
+Gate(0, false)
+Gate(1, false)
+Gate(2, false)
+
+# Start Background Tone
+Simple_Note(1,1,2,3)
+
+# Volume controls for each channel.
+# Range is -80dB to 0dB
+Volume(0, -12)
+Volume(1, 0)
+Volume(2, 0)
+
+# Create Sound_step value for music changes
+SET number Sound_step = 0
+
+# Sound for enemy FireBossCounter 
+FUNCTION FireSound()
+	Gate(2, false)
+	Ch2Sound = 1
+	Ch2Cnt = 1
+	Tone(2,4,3,5,0,0,1,0)
+	Gate(2, true)
+RESULT nothing
+
+# Sound for enemy getting hit
+FUNCTION EnemyHitSound()
+	Gate(2, false)
+	Ch2Sound = 2
+	Ch2Cnt = 1
+	Tone(2,2,2,5,0,0,1,0)
+	Gate(2, true)
+RESULT nothing
+
+# Sound for player getting hit
+FUNCTION PlayerHitSound()
+	Gate(2, false)
+	Ch2Sound = 3
+	Ch2Cnt = 1
+	Tone(2,2,3,5,0,0,1,0)
+	Gate(2, true)
+RESULT nothing
+
+# Sound for sword swinging. Only if no other sounds
+FUNCTION SwordSound()
+	IF Ch2Sound EQ 0 THEN
+		Gate(2, false)
+		Ch2Sound = 4
+		Ch2Cnt = 1
+		Tone(2,1,3,6,0,0,1,0)
+		Gate(2, true)
+	OK
+RESULT nothing
+
+#Sound of collecting key
+FUNCTION KeySound()
+	Gate(2, false)
+	Ch2Sound = 5
+	Ch2Cnt = 1
+	Tone(2,1,4,7,0,0,1,0)
+	Gate(2, true)
+RESULT nothing
+
+# Sound of openning door. Pauses game
+FUNCTION DoorSound()
+	Gate(2, false)
+	#Ch2Sound = 6
+	#Ch2Cnt = 1
+	Tone(2,4,2,1,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	wait(.2)
+RESULT nothing
+
+FUNCTION powergloveSound()
+	Gate(2, false)
+	#Ch2Sound = 6
+	#Ch2Cnt = 1
+	Tone(2,1,4,6,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	#wait(.1)
+	Tone(2,1,4,5,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	#wait(.1)
+	Tone(2,1,4,2,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	#wait(.1)
+	Tone(2,1,4,3,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	#wait(.1)
+	Tone(2,1,4,6,0,1,0,0)
+	Gate(2, true)
+	wait(.2)
+	Gate(2, false)
+	wait(.1)
+RESULT nothing
+
+# Starts Background Music
+FUNCTION BackgroundMusicON()
+	IF Sound_step EQ 0 then # Starts Sounds 0 and 1. Changes Sound 0 note to Note_0_1
+		Simple_Note(0,2,3,Note_0_1)
+		Gate(0, true)
+		Gate(1, true)
+		Sound_step = Sound_step + 1
+	ELSE IF Sound_step EQ 16 OR Sound_step EQ 36 THEN # Rest for Sound 0
+		Gate(0, false)
+		Sound_step = Sound_step + 1
+	ELSE IF Sound_step EQ 20 THEN # Changes Sound 0 note to Note_0_2
+		Simple_Note(0,2,3,Note_0_2)
+		Gate(0, true)
+		Sound_step = Sound_step + 1
+	ELSE IF Sound_step EQ 50 THEN # Resets sound counter
+		Sound_step = 0
+	ELSE # Steps sound counter
+		Sound_step = Sound_step + 1
+	OK OK OK OK
+RESULT nothing
+
+# Stops background music and resets sound counter. For changing rooms
+FUNCTION BackgroundMusicOFF()
+	Gate(0, false)
+	Gate(1, false)
+	Sound_step = 0
+RESULT nothing 
